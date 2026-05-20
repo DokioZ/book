@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>搜索功能测试</title>
+</head>
+<body>
+    <h1>搜索功能测试</h1>
+    <div>
+        <input type="text" id="testSearchInput" placeholder="搜索应用...">
+        <select id="testCategoryFilter">
+            <option value="">全部分类</option>
+            <option value="工具">工具</option>
+            <option value="教育">教育</option>
+            <option value="娱乐">娱乐</option>
+            <option value="其他">其他</option>
+        </select>
+        <button id="testSearchBtn">搜索</button>
+    </div>
+    <div id="testResults"></div>
+    
+    <script>
+        document.getElementById('testSearchBtn').onclick = function() {
+            performTestSearch();
+        };
+        
+        document.getElementById('testSearchInput').onkeypress = function(e) {
+            if (e.key === 'Enter') {
+                performTestSearch();
+            }
+        };
+        
+        document.getElementById('testCategoryFilter').onchange = function() {
+            performTestSearch();
+        };
+        
+        function performTestSearch() {
+            console.log('开始搜索');
+            var searchTerm = document.getElementById('testSearchInput').value;
+            var category = document.getElementById('testCategoryFilter').value;
+            console.log('搜索参数:', { searchTerm: searchTerm, category: category });
+            
+            var url = 'http://localhost:3001/api/apps?approved=true';
+            if (category) url += '&category=' + encodeURIComponent(category);
+            if (searchTerm) url += '&search=' + encodeURIComponent(searchTerm);
+            
+            console.log('请求URL:', url);
+            
+            fetch(url)
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    console.log('搜索结果:', data);
+                    var resultsDiv = document.getElementById('testResults');
+                    if (data.success) {
+                        resultsDiv.innerHTML = '<h3>搜索结果 (' + data.apps.length + '个)</h3>';
+                        data.apps.forEach(function(app) {
+                            resultsDiv.innerHTML += '<div>ID: ' + app.id + ', 名称: ' + app.name + ', 分类: ' + app.category + ', 作者: ' + app.author + '</div>';
+                        });
+                    } else {
+                        resultsDiv.innerHTML = '<h3>搜索失败</h3>';
+                    }
+                })
+                .catch(function(err) {
+                    console.error('搜索出错:', err);
+                    document.getElementById('testResults').innerHTML = '<h3>搜索出错: ' + err.message + '</h3>';
+                });
+        }
+        
+        // 页面加载时自动执行一次搜索
+        window.onload = function() {
+            performTestSearch();
+        };
+    </script>
+</body>
+</html>

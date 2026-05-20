@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>应用商店 - 图书智能宣传系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        header {
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            text-decoration: none;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .nav-links a {
+            color: #333;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: #007bff;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        
+        h1 {
+            margin-bottom: 2rem;
+            font-size: 2rem;
+            color: #333;
+        }
+        
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .search-bar select {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            background-color: #fff;
+        }
+        
+        .app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .app-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .app-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .app-icon {
+            width: 100%;
+            height: 200px;
+            background-color: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #999;
+        }
+        
+        .app-info {
+            padding: 1.5rem;
+        }
+        
+        .app-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        
+        .app-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        
+        .app-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+            color: #999;
+        }
+        
+        .app-rating {
+            color: #ff9800;
+        }
+        
+        .app-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .app-actions button {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .download-btn {
+            background-color: #28a745;
+            color: #fff;
+        }
+        
+        .download-btn:hover {
+            background-color: #218838;
+        }
+        
+        .detail-btn {
+            background-color: #007bff;
+            color: #fff;
+        }
+        
+        .detail-btn:hover {
+            background-color: #0056b3;
+        }
+        
+        .publish-btn {
+            padding: 0.75rem 1.5rem;
+            background-color: #17a2b8;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-bottom: 2rem;
+        }
+        
+        .publish-btn:hover {
+            background-color: #138496;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .modal-header h2 {
+            font-size: 1.5rem;
+            color: #333;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .close-btn:hover {
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+        
+        .form-actions button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .submit-btn {
+            background-color: #007bff;
+            color: #fff;
+        }
+        
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+        
+        .cancel-btn {
+            background-color: #6c757d;
+            color: #fff;
+        }
+        
+        .cancel-btn:hover {
+            background-color: #5a6268;
+        }
+        
+        .toast {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            background-color: #333;
+            color: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 3000;
+            display: none;
+        }
+        
+        .toast.success {
+            background-color: #28a745;
+        }
+        
+        .toast.error {
+            background-color: #dc3545;
+        }
+        
+        .toast.info {
+            background-color: #17a2b8;
+        }
+        
+        footer {
+            background-color: #333;
+            color: #fff;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .app-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-bar {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="#" class="logo">图书智能宣传系统</a>
+        <nav class="nav-links">
+            <a href="create-video.html">视频创作</a>
+            <a href="user-center.html">用户中心</a>
+        </nav>
+    </header>
+    
+    <div class="container">
+        <h1>应用商店</h1>
+        
+        <button id="publishAppBtn" class="publish-btn">发布新应用</button>
+        
+        <div class="search-bar">
+            <select id="categoryFilter">
+                <option value="">全部分类</option>
+                <option value="工具">工具</option>
+                <option value="教育">教育</option>
+                <option value="娱乐">娱乐</option>
+                <option value="其他">其他</option>
+            </select>
+        </div>
+        
+        <div id="appGrid" class="app-grid">
+            <!-- 应用卡片将通过JavaScript动态生成 -->
+        </div>
+    </div>
+    
+    <!-- 发布应用模态框 -->
+    <div id="publishModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>发布新应用</h2>
+                <button id="closePublishModal" class="close-btn">&times;</button>
+            </div>
+            <form id="publishAppForm">
+                <div class="form-group">
+                    <label for="appName">应用名称</label>
+                    <input type="text" id="appName" required>
+                </div>
+                <div class="form-group">
+                    <label for="appDescription">应用描述</label>
+                    <textarea id="appDescription" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="appIcon">图标URL（可选）</label>
+                    <input type="text" id="appIcon">
+                </div>
+                <div class="form-group">
+                    <label for="appDownloadUrl">下载链接</label>
+                    <input type="text" id="appDownloadUrl" required>
+                </div>
+                <div class="form-group">
+                    <label for="appCategory">分类</label>
+                    <select id="appCategory" required>
+                        <option value="工具">工具</option>
+                        <option value="教育">教育</option>
+                        <option value="娱乐">娱乐</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="appVersion">版本号</label>
+                    <input type="text" id="appVersion" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="cancelPublishBtn" class="cancel-btn">取消</button>
+                    <button type="submit" class="submit-btn">发布</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 应用详情模态框 -->
+    <div id="appDetailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="detailAppTitle">应用详情</h2>
+                <button id="closeDetailModal" class="close-btn">&times;</button>
+            </div>
+            <div id="appDetailContent">
+                <!-- 应用详情将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast提示 -->
+    <div id="toast" class="toast"></div>
+    
+    <footer>
+        <p>&copy; 2023 图书智能宣传系统 - 应用商店</p>
+    </footer>
+    
+    <script>
+        // 全局变量
+        let currentAppId = null;
+        
+        // DOM元素
+        const publishModal = document.getElementById('publishModal');
+        const appDetailModal = document.getElementById('appDetailModal');
+        const toast = document.getElementById('toast');
+        const appGrid = document.getElementById('appGrid');
+        
+        // 显示Toast提示
+        function showToast(message, type = 'info') {
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.style.display = 'block';
+            
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+        
+        // 验证用户登录状态
+        function checkLogin() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return false;
+            }
+            return token;
+        }
+        
+        // 获取应用列表
+        function loadApps(category = '') {
+            // 创建URL对象以便于构建查询参数
+            const url = new URL('http://localhost:3001/api/apps');
+            
+            // 添加必要的查询参数
+            url.searchParams.append('approved', 'true');
+            
+            // 只有当分类值有效时才添加
+            if (category && category.trim() !== '') {
+                url.searchParams.append('category', category.trim());
+            }
+            
+            const fullUrl = url.toString();
+            console.log('请求的URL:', fullUrl);
+            
+            // 使用简单的fetch请求
+            fetch(fullUrl)
+            .then(function(response) {
+                console.log('响应状态:', response.status);
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('HTTP错误，状态码: ' + response.status);
+                }
+            })
+            .then(function(data) {
+                console.log('响应数据:', data);
+                if (data && data.success) {
+                    renderAppGrid(data.apps);
+                } else {
+                    showToast('获取应用列表失败', 'error');
+                }
+            })
+            .catch(function(error) {
+                console.error('获取应用列表失败:', error);
+                showToast('获取应用列表失败，请检查网络连接', 'error');
+            });
+        }
+        
+        // 渲染应用列表
+        function renderAppGrid(apps) {
+            appGrid.innerHTML = '';
+            
+            if (apps.length === 0) {
+                appGrid.innerHTML = '<p style="text-align: center; width: 100%; padding: 2rem;">暂无应用</p>';
+                return;
+            }
+            
+            apps.forEach(app => {
+                const appCard = document.createElement('div');
+                appCard.className = 'app-card';
+                
+                appCard.innerHTML = `
+                    <div class="app-icon">
+                        ${app.icon_url ? `<img src="${app.icon_url}" alt="${app.name}" style="max-width: 100%; max-height: 100%;">` : '📱'}
+                    </div>
+                    <div class="app-info">
+                        <h3 class="app-title">${app.name}</h3>
+                        <p class="app-description">${app.description.length > 100 ? app.description.substring(0, 100) + '...' : app.description}</p>
+                        <div class="app-meta">
+                            <span>${app.author}</span>
+                            <span class="app-rating">⭐ ${app.rating || 0}</span>
+                            <span>下载 ${app.downloads || 0}</span>
+                        </div>
+                        <div class="app-actions">
+                            <button class="download-btn" data-id="${app.id}">下载</button>
+                            <button class="detail-btn" data-id="${app.id}">详情</button>
+                        </div>
+                    </div>
+                `;
+                
+                appGrid.appendChild(appCard);
+            });
+            
+            // 绑定按钮事件
+            document.querySelectorAll('.download-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const appId = e.currentTarget.dataset.id;
+                    downloadApp(appId);
+                });
+            });
+            
+            document.querySelectorAll('.detail-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const appId = e.currentTarget.dataset.id;
+                    showAppDetail(appId);
+                });
+            });
+        }
+        
+        // 下载应用
+        function downloadApp(appId) {
+            const token = checkLogin();
+            if (!token) return;
+            
+            fetch(`http://localhost:3001/api/apps/${appId}/download`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('应用下载链接获取成功', 'success');
+                    // 打开下载链接
+                    window.open(data.downloadUrl, '_blank');
+                    // 重新加载应用列表以更新下载次数
+                    loadApps();
+                } else {
+                    showToast('下载失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('下载应用失败:', error);
+                showToast('下载应用失败，请稍后再试', 'error');
+            });
+        }
+        
+        // 显示应用详情
+        function showAppDetail(appId) {
+            const token = checkLogin();
+            if (!token) return;
+            
+            fetch(`http://localhost:3001/api/apps/${appId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const app = data.app;
+                    currentAppId = appId;
+                    document.getElementById('detailAppTitle').textContent = app.name;
+                    
+                    const detailContent = document.getElementById('appDetailContent');
+                    detailContent.innerHTML = `
+                        <div style="text-align: center; margin-bottom: 2rem;">
+                            <div style="display: inline-block; width: 120px; height: 120px; background-color: #f0f0f0; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem;">
+                                ${app.icon_url ? `<img src="${app.icon_url}" alt="${app.name}" style="max-width: 100%; max-height: 100%; border-radius: 20px;">` : '<span style="font-size: 4rem;">📱</span>'}
+                            </div>
+                            <h3 style="font-size: 1.5rem; margin-bottom: 0.5rem;">${app.name}</h3>
+                            <p style="color: #666; margin-bottom: 1rem;">版本: ${app.version}</p>
+                            <p style="color: #666; margin-bottom: 1rem;">作者: ${app.author}</p>
+                            <div style="display: inline-flex; align-items: center; margin-bottom: 1rem;">
+                                <span style="color: #ff9800; margin-right: 0.5rem;">⭐ ${app.rating || 0}</span>
+                                <span style="color: #666;">下载 ${app.downloads || 0} 次</span>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 2rem;">
+                            <h4 style="margin-bottom: 1rem;">应用描述</h4>
+                            <p style="line-height: 1.6;">${app.description}</p>
+                        </div>
+                        <div class="form-actions">
+                            <button id="detailDownloadBtn" class="submit-btn">下载</button>
+                            <button id="rateAppBtn" class="cancel-btn">评分</button>
+                        </div>
+                    `;
+                    
+                    appDetailModal.style.display = 'flex';
+                    
+                    // 绑定详情页按钮事件
+                    document.getElementById('detailDownloadBtn').addEventListener('click', () => {
+                        downloadApp(appId);
+                        appDetailModal.style.display = 'none';
+                    });
+                    
+                    document.getElementById('rateAppBtn').addEventListener('click', () => {
+                        const rating = prompt('请为应用评分（1-5分）:');
+                        if (rating && rating >= 1 && rating <= 5) {
+                            submitRating(appId, parseInt(rating));
+                        } else if (rating) {
+                            showToast('评分必须在1-5之间', 'error');
+                        }
+                    });
+                } else {
+                    showToast('获取应用详情失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('获取应用详情失败:', error);
+                showToast('获取应用详情失败，请稍后再试', 'error');
+            });
+        }
+        
+        // 提交评分
+        function submitRating(appId, rating) {
+            const token = checkLogin();
+            if (!token) return;
+            
+            fetch(`http://localhost:3001/api/apps/${appId}/rate`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ rating })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('评分成功', 'success');
+                    // 重新加载应用详情以更新评分
+                    showAppDetail(appId);
+                } else {
+                    showToast('评分失败: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('提交评分失败:', error);
+                showToast('提交评分失败，请稍后再试', 'error');
+            });
+        }
+        
+        // 初始化事件监听
+        function initEventListeners() {
+            // 搜索功能实现
+            
+            // 直接获取DOM元素
+            // 分类筛选器变化事件
+            const categoryFilter = document.getElementById('categoryFilter');
+            if (categoryFilter) {
+                categoryFilter.addEventListener('change', () => {
+                    const category = categoryFilter.value;
+                    console.log('分类参数:', { category });
+                    loadApps(category);
+                });
+            }
+            
+            // 发布应用按钮点击事件
+            document.getElementById('publishAppBtn').addEventListener('click', () => {
+                publishModal.style.display = 'flex';
+            });
+            
+            // 关闭发布应用模态框
+            document.getElementById('closePublishModal').addEventListener('click', () => {
+                publishModal.style.display = 'none';
+            });
+            
+            document.getElementById('cancelPublishBtn').addEventListener('click', () => {
+                publishModal.style.display = 'none';
+            });
+            
+            // 关闭应用详情模态框
+            document.getElementById('closeDetailModal').addEventListener('click', () => {
+                appDetailModal.style.display = 'none';
+            });
+            
+            // 点击模态框外部关闭
+            window.addEventListener('click', (e) => {
+                if (e.target === publishModal) {
+                    publishModal.style.display = 'none';
+                }
+                if (e.target === appDetailModal) {
+                    appDetailModal.style.display = 'none';
+                }
+            });
+            
+            // 发布应用表单提交事件
+            document.getElementById('publishAppForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const token = checkLogin();
+                if (!token) return;
+                
+                const appData = {
+                    name: document.getElementById('appName').value,
+                    description: document.getElementById('appDescription').value,
+                    icon_url: document.getElementById('appIcon').value,
+                    download_url: document.getElementById('appDownloadUrl').value,
+                    category: document.getElementById('appCategory').value,
+                    version: document.getElementById('appVersion').value
+                };
+                
+                fetch('http://localhost:3001/api/apps', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(appData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast('应用发布成功，等待管理员审核', 'success');
+                        publishModal.style.display = 'none';
+                        document.getElementById('publishAppForm').reset();
+                        // 重新加载应用列表
+                        loadApps();
+                    } else {
+                        showToast('发布应用失败: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('发布应用失败:', error);
+                    showToast('发布应用失败，请稍后再试', 'error');
+                });
+            });
+        }
+        
+        
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM加载完成，开始初始化事件监听器...');
+            
+            // 初始化分类筛选器
+            const categoryFilter = document.getElementById('categoryFilter');
+            if (categoryFilter) {
+                categoryFilter.addEventListener('change', () => {
+                    console.log('分类筛选器被更改');
+                    const category = categoryFilter.value;
+                    console.log('分类参数:', { category });
+                    loadApps(category);
+                });
+            }
+            
+            // 加载应用列表
+            loadApps();
+            
+            // 发布应用模态框事件
+            const publishAppBtn = document.getElementById('publishAppBtn');
+            const publishModal = document.getElementById('publishModal');
+            const closePublishModal = document.getElementById('closePublishModal');
+            
+            if (publishAppBtn && publishModal) {
+                publishAppBtn.addEventListener('click', () => {
+                    publishModal.style.display = 'flex';
+                });
+            }
+            
+            if (closePublishModal && publishModal) {
+                closePublishModal.addEventListener('click', () => {
+                    publishModal.style.display = 'none';
+                });
+            }
+            
+            // 关闭应用详情模态框
+            const closeDetailModal = document.getElementById('closeDetailModal');
+            const appDetailModal = document.getElementById('appDetailModal');
+            
+            if (closeDetailModal && appDetailModal) {
+                closeDetailModal.addEventListener('click', () => {
+                    appDetailModal.style.display = 'none';
+                });
+            }
+            
+            // 点击模态框外部关闭
+            window.addEventListener('click', (e) => {
+                if (e.target === publishModal) {
+                    publishModal.style.display = 'none';
+                }
+                if (e.target === appDetailModal) {
+                    appDetailModal.style.display = 'none';
+                }
+            });
+            
+            // 发布应用表单提交事件
+            const publishAppForm = document.getElementById('publishAppForm');
+            if (publishAppForm) {
+                publishAppForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    
+                    const token = checkLogin();
+                    if (!token) return;
+                    
+                    const appData = {
+                        name: document.getElementById('appName').value,
+                        description: document.getElementById('appDescription').value,
+                        icon_url: document.getElementById('appIcon').value,
+                        download_url: document.getElementById('appDownloadUrl').value,
+                        category: document.getElementById('appCategory').value,
+                        version: document.getElementById('appVersion').value
+                    };
+                    
+                    fetch('http://localhost:3001/api/apps', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(appData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast('应用发布成功，等待管理员审核', 'success');
+                            publishModal.style.display = 'none';
+                            publishAppForm.reset();
+                            // 重新加载应用列表
+                            loadApps();
+                        } else {
+                            showToast('发布应用失败: ' + data.message, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('发布应用失败:', error);
+                        showToast('发布应用失败，请稍后再试', 'error');
+                    });
+                });
+            }
+            
+            console.log('事件监听器初始化完成，开始加载应用列表...');
+            loadApps();
+        });
+    </script>
+</body>
+</html>

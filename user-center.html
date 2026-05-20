@@ -1,0 +1,2663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://*; connect-src 'self' http://localhost:* https://* https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://*; style-src 'self' 'unsafe-inline' https://*; img-src 'self' data: http://localhost:* https://*; media-src 'self' blob: http://localhost:* https://*;">
+    <title>图书智能宣传系统 - 个人中心</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/static/lib/echarts.min.js"></script>
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            overflow-x: hidden;
+        }
+        
+        /* 主容器 */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* 顶部导航栏 */
+        header {
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a73e8;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo-icon {
+            font-size: 32px;
+            margin-right: 10px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav-link {
+            text-decoration: none;
+            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-link:hover,
+        .nav-link.active {
+            color: #1a73e8;
+        }
+        
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .search-btn, .cart-btn, .user-btn, .login-btn, .register-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #333;
+            cursor: pointer;
+            transition: color 0.3s;
+            padding: 8px;
+            border-radius: 50%;
+        }
+        
+        .search-btn:hover, .cart-btn:hover, .user-btn:hover {
+            background-color: #f0f0f0;
+            color: #1a73e8;
+        }
+        
+        .login-btn, .register-btn {
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        
+        .login-btn {
+            color: #1a73e8;
+            background-color: transparent;
+        }
+        
+        .register-btn {
+            color: #fff;
+            background-color: #1a73e8;
+        }
+        
+        /* 内容区域布局 */
+        .content-wrapper {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 30px;
+            margin: 40px 0 60px;
+        }
+        
+        /* 左侧用户信息 */
+        .user-profile {
+            background-color: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 100px;
+        }
+        
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .user-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto 20px;
+            border: 4px solid #f0f0f0;
+            transition: transform 0.3s;
+        }
+        
+        .user-avatar:hover {
+            transform: scale(1.05);
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .user-name {
+            font-size: 22px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .user-bio {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .user-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .profile-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .action-btn {
+            padding: 12px 20px;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .action-btn:hover {
+            border-color: #1a73e8;
+            color: #1a73e8;
+            background-color: #f0f5ff;
+        }
+        
+        .action-btn.primary {
+            background-color: #1a73e8;
+            color: #fff;
+            border-color: #1a73e8;
+        }
+        
+        .action-btn.primary:hover {
+            background-color: #1557b0;
+            border-color: #1351a2;
+            color: #fff;
+        }
+        
+        /* 右侧内容区域 */
+        .main-content {
+            background-color: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* 选项卡导航 */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #f0f0f0;
+            margin-bottom: 30px;
+        }
+        
+        .tab {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .tab:hover {
+            color: #1a73e8;
+        }
+        
+        .tab.active {
+            color: #1a73e8;
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background-color: #1a73e8;
+            border-radius: 3px 3px 0 0;
+        }
+        
+        /* 内容区域 */
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* 视频网格 */
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        /* 视频卡片 */
+        .video-card {
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #fff;
+            border: 1px solid #f0f0f0;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .video-thumbnail {
+            position: relative;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            background-color: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .video-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        
+        .video-thumbnail img[src=""], .video-thumbnail img:not([src]) {
+            display: none;
+        }
+        
+        .video-card:hover .video-thumbnail img {
+            transform: scale(1.05);
+        }
+        
+        .video-duration {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        
+        .video-status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        
+        .video-status.approved {
+            background-color: #2ed573;
+        }
+        
+        .video-status.pending {
+            background-color: #ff9f43;
+        }
+        
+        .video-status.rejected {
+            background-color: #ff4757;
+        }
+        
+        .video-status.banned {
+            background-color: #747d8c;
+        }
+        
+        .video-play-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        
+        .video-card:hover .video-play-btn {
+            opacity: 1;
+        }
+        
+        .video-play-btn i {
+            color: #fff;
+            font-size: 24px;
+            margin-left: 3px;
+        }
+        
+        .video-info {
+            padding: 15px;
+        }
+        
+        .video-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .video-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .book-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .book-info i {
+            color: #1a73e8;
+        }
+        
+        .video-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #999;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .stat-item:hover {
+            color: #1a73e8;
+        }
+        
+        .stat-item.liked {
+            color: #ff4757;
+        }
+        
+        .stat-item.collected {
+            color: #ff9f43;
+        }
+        
+        /* 视频操作按钮 */
+        .video-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .video-action-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .video-action-btn:hover {
+            border-color: #1a73e8;
+            color: #1a73e8;
+        }
+        
+        .video-action-btn.share {
+            background-color: #1a73e8;
+            color: #fff;
+            border-color: #1a73e8;
+        }
+        
+        .video-action-btn.share:hover {
+            background-color: #1557b0;
+            border-color: #1351a2;
+            color: #fff;
+        }
+        
+        .video-action-btn.delete {
+            border-color: #ff4757;
+            color: #ff4757;
+        }
+        
+        .video-action-btn.delete:hover {
+            background-color: #ff4757;
+            color: #fff;
+        }
+        
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        
+        .empty-state i {
+            font-size: 64px;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .empty-state button {
+            padding: 12px 30px;
+            background-color: #1a73e8;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .empty-state button:hover {
+            background-color: #1557b0;
+        }
+        
+        /* 加载更多按钮 */
+        .load-more {
+            margin-top: 40px;
+            text-align: center;
+        }
+        
+        .load-more-btn {
+            padding: 12px 30px;
+            background-color: #f0f0f0;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .load-more-btn:hover {
+            background-color: #1a73e8;
+            color: #fff;
+        }
+        
+        /* 设置页面样式 */
+        .settings-form {
+            max-width: 600px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: 'Alibaba PuHuiTi', sans-serif;
+            transition: border-color 0.3s;
+        }
+        
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 120px;
+            line-height: 1.5;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 40px;
+        }
+        
+        .save-btn, .cancel-btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .save-btn {
+            background-color: #1a73e8;
+            color: #fff;
+        }
+        
+        .save-btn:hover {
+            background-color: #1557b0;
+        }
+        
+        .cancel-btn {
+            background-color: #f0f0f0;
+            color: #666;
+        }
+        
+        .cancel-btn:hover {
+            background-color: #e0e0e0;
+        }
+        
+        /* 页脚 */
+        footer {
+            background-color: #333;
+            color: #fff;
+            padding: 40px 0;
+            margin-top: 60px;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+        
+        .footer-column h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .footer-column ul {
+            list-style: none;
+        }
+        
+        .footer-column li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-column a {
+            color: #ccc;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-column a:hover {
+            color: #fff;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            margin-top: 30px;
+            border-top: 1px solid #555;
+            color: #999;
+            font-size: 14px;
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 1024px) {
+            .content-wrapper {
+                grid-template-columns: 1fr;
+            }
+            
+            .user-profile {
+                position: static;
+                margin-bottom: 30px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .tabs {
+                overflow-x: auto;
+                scrollbar-width: none;
+            }
+            
+            .tabs::-webkit-scrollbar {
+                display: none;
+            }
+            
+            .tab {
+                padding: 15px 20px;
+                white-space: nowrap;
+            }
+            
+            .videos-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+        }
+        
+        /* 底部导航栏 - 移动端 */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            border-top: 1px solid #f0f0f0;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 900;
+        }
+        
+        .mobile-nav-items {
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #666;
+            text-decoration: none;
+        }
+        
+        .mobile-nav-item.active {
+            color: #1a73e8;
+        }
+        
+        .mobile-nav-icon {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        
+        .mobile-nav-text {
+            font-size: 12px;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-nav {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header>
+        <div class="container header-content">
+            <a href="index.html" class="logo">
+                <i class="iconfont icon-book logo-icon"></i>
+                <span>图书智能宣传系统</span>
+            </a>
+            
+            <nav class="nav-links">
+                <a href="bookstore.html" class="nav-link">图书商店</a>
+                <a href="create-video.html" class="nav-link">生成视频</a>
+                <a href="book-square.html" class="nav-link">图书广场</a>
+                <a href="user-center.html" class="nav-link active">个人中心</a>
+                <a href="cart.html" class="nav-link">我的购物车</a>
+                <a href="orders.html" class="nav-link">我的订单</a>
+            </nav>
+            
+            <div class="user-actions">
+                <button class="search-btn"><i class="iconfont icon-search"></i></button>
+                <a href="cart.html" class="cart-btn" style="text-decoration: none; display: inline-block;"><i class="iconfont icon-shopping-cart"></i></a>
+                <button class="user-btn"><i class="iconfont icon-user"></i></button>
+                <button class="login-btn">登录</button>
+                <button class="register-btn">注册</button>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <!-- 内容区域 -->
+        <div class="content-wrapper">
+            <!-- 左侧用户信息 -->
+            <div class="user-profile">
+                <div class="profile-header">
+                    <div class="user-avatar">
+                        <img src="https://picsum.photos/id/1005/300/300" alt="用户头像">
+                    </div>
+                    <h2 class="user-name">科幻迷</h2>
+                    <p class="user-bio">热爱科幻文学，喜欢分享好书和创作AI视频。欢迎交流！</p>
+                </div>
+                
+                <div class="user-stats">
+                    <div class="stat">
+                        <div class="stat-number">15</div>
+                        <div class="stat-label">创作视频</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">48</div>
+                        <div class="stat-label">收藏视频</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">2.5k</div>
+                        <div class="stat-label">总播放量</div>
+                    </div>
+                </div>
+                
+                <div class="profile-actions">
+                    <a href="create-video.html" class="action-btn primary">
+                        <i class="iconfont icon-plus"></i>
+                        <span>创作新视频</span>
+                    </a>
+                    <button class="action-btn">
+                        <i class="iconfont icon-edit"></i>
+                        <span>编辑个人资料</span>
+                    </button>
+                    <button class="action-btn">
+                        <i class="iconfont icon-settings"></i>
+                        <span>账户设置</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 右侧内容区域 -->
+            <div class="main-content">
+                <!-- 选项卡导航 -->
+                <div class="tabs">
+                    <button class="tab active" data-tab="my-videos">我的创作</button>
+                    <button class="tab" data-tab="collections">我的收藏</button>
+                    <button class="tab" data-tab="liked">我的点赞</button>
+                    <button class="tab" data-tab="history">浏览历史</button>
+                    <button class="tab" data-tab="interest-profile">兴趣画像</button>
+                    <button class="tab" data-tab="settings">账户设置</button>
+                </div>
+                
+                <!-- 我的创作内容 -->
+                <div class="tab-content active" id="my-videos">
+                    <!-- 视频上传区域 -->
+                    <div class="upload-section" style="text-align: center; margin-bottom: 30px; padding: 30px; background-color: #f8f9fa; border-radius: 12px; border: 2px dashed #ddd;">
+                        <div style="max-width: 420px; margin: 0 auto 16px auto; text-align: left;">
+                            <label for="uploadBookSelect" style="display:block; font-size:14px; color:#333; margin-bottom:8px;">关联图书（必选）</label>
+                            <input id="uploadBookSearch" list="uploadBookOptionsDL" type="text" placeholder="输入书名/作者并选择（如：三体 / 刘慈欣）" style="width:100%; padding:10px 12px; border:1px solid #d9d9d9; border-radius:8px; font-size:14px; background:#fff;">
+                            <datalist id="uploadBookOptionsDL"></datalist>
+                            <select id="uploadBookSelect" style="display:none;">
+                                <option value="">请选择要关联的图书</option>
+                            </select>
+                            <div style="font-size:12px; color:#888; margin-top:6px;">上传视频前先选择一本图书，推荐算法会按该图书记录你的互动行为</div>
+                            <label for="uploadVideoTags" style="display:block; font-size:14px; color:#333; margin:10px 0 8px;">视频标签（必填）</label>
+                            <input id="uploadVideoTags" list="uploadVideoTagSuggestions" type="text" placeholder="如：科幻, 太空, 文明冲突" style="width:100%; padding:10px 12px; border:1px solid #d9d9d9; border-radius:8px; font-size:14px; background:#fff;">
+                            <datalist id="uploadVideoTagSuggestions"></datalist>
+                            <div id="uploadTagQuickPicks" style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;"></div>
+                            <div style="font-size:12px; color:#888; margin-top:6px;">多个标签可用逗号分隔（至少 1 个）</div>
+                            <label for="uploadVideoCategory" style="display:block; font-size:14px; color:#333; margin:10px 0 8px;">视频分类（选填）</label>
+                            <input id="uploadVideoCategory" type="text" placeholder="如：科幻解读 / 历史文化 / 经济思维（可留空自动补全）" style="width:100%; padding:10px 12px; border:1px solid #d9d9d9; border-radius:8px; font-size:14px; background:#fff;">
+                            <label for="uploadVideoTopic" style="display:block; font-size:14px; color:#333; margin:10px 0 8px;">视频主题（选填）</label>
+                            <input id="uploadVideoTopic" type="text" placeholder="如：文明冲突 / 成长寓言 / 资产配置（可留空自动补全）" style="width:100%; padding:10px 12px; border:1px solid #d9d9d9; border-radius:8px; font-size:14px; background:#fff;">
+                        </div>
+                        <input type="file" id="videoUpload" accept="video/*" style="display: none;" />
+                        <div style="cursor: pointer; display: inline-block;">
+                            <i class="iconfont icon-cloud-upload" style="font-size: 48px; color: #1a73e8; margin-bottom: 15px;"></i>
+                            <h3 style="font-size: 18px; color: #333; margin-bottom: 10px;">上传本地视频</h3>
+                            <p style="color: #666; margin-bottom: 15px;">支持MP4、MOV、AVI等常见视频格式</p>
+                            <label for="videoUpload" style="padding: 12px 30px; background-color: #1a73e8; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; transition: background-color 0.3s; display: inline-block;">选择视频文件</label>
+                        </div>
+                        <p id="uploadStatus" style="margin-top: 15px; color: #666;"></p>
+                    </div>
+
+                    <!-- 已上传视频列表 -->
+                    <h3 style="margin-bottom: 20px; font-size: 20px; color: #333;">我的视频</h3>
+                    <div class="videos-grid" id="uploadedVideos">
+                        <!-- 上传的视频将在这里动态显示 -->
+                        <div class="empty-state">
+                            <i class="iconfont icon-video"></i>
+                            <h3>还没有上传视频</h3>
+                            <p>上传本地视频，它们将显示在这里</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 我的收藏内容 -->
+                <div class="tab-content" id="collections">
+                    <div class="empty-state">
+                        <i class="iconfont icon-collection"></i>
+                        <h3>还没有收藏的视频</h3>
+                        <p>在图书广场发现喜欢的视频并收藏，它们将显示在这里</p>
+                        <a href="book-square.html"><button>去图书广场逛逛</button></a>
+                    </div>
+                </div>
+                
+                <!-- 我的点赞内容 -->
+                <div class="tab-content" id="liked">
+                    <div class="empty-state">
+                        <i class="iconfont icon-heart"></i>
+                        <h3>还没有点赞的视频</h3>
+                        <p>在图书广场发现喜欢的视频并点赞，它们将显示在这里</p>
+                        <a href="book-square.html"><button>去图书广场逛逛</button></a>
+                    </div>
+                </div>
+                
+                <!-- 浏览历史内容 -->
+                <div class="tab-content" id="history">
+                    <div class="empty-state">
+                        <i class="iconfont icon-history"></i>
+                        <h3>暂无浏览历史</h3>
+                        <p>浏览视频后，您的观看历史将显示在这里</p>
+                        <a href="book-square.html"><button>去图书广场逛逛</button></a>
+                    </div>
+                </div>
+
+                <!-- 兴趣画像内容 -->
+                <div class="tab-content" id="interest-profile">
+                    <div class="empty-state">
+                        <i class="iconfont icon-user"></i>
+                        <h3>兴趣画像待生成</h3>
+                        <p>基于最近互动行为生成偏好作者、分类与标签</p>
+                    </div>
+                </div>
+                
+                <!-- 账户设置内容 -->
+                <div class="tab-content" id="settings">
+                    <form class="settings-form">
+                        <div class="form-group">
+                            <label class="form-label">用户名</label>
+                            <input type="text" class="form-input" value="科幻迷" disabled>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">邮箱</label>
+                            <input type="email" class="form-input" value="kehuanmi@example.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">个人简介</label>
+                            <textarea class="form-textarea">热爱科幻文学，喜欢分享好书和创作AI视频。欢迎交流！</textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">修改密码</label>
+                            <input type="password" class="form-input" placeholder="请输入新密码">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">确认新密码</label>
+                            <input type="password" class="form-input" placeholder="请再次输入新密码">
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="save-btn">保存设置</button>
+                            <button type="button" class="cancel-btn">取消</button>
+                            <button type="button" class="cancel-btn" id="logout-btn" style="background-color:#ff4757;color:#fff;">退出登录</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 页脚 -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-column">
+                <h3>关于我们</h3>
+                <ul>
+                    <li><a href="#">公司介绍</a></li>
+                    <li><a href="#">联系方式</a></li>
+                    <li><a href="#">招聘信息</a></li>
+                    <li><a href="#">合作伙伴</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>帮助中心</h3>
+                <ul>
+                    <li><a href="#">常见问题</a></li>
+                    <li><a href="#">使用指南</a></li>
+                    <li><a href="#">意见反馈</a></li>
+                    <li><a href="#">用户协议</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>关注我们</h3>
+                <ul>
+                    <li><a href="#">微信公众号</a></li>
+                    <li><a href="#">微博</a></li>
+                    <li><a href="#">抖音</a></li>
+                    <li><a href="#">小红书</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>&copy; 2023 图书智能宣传系统 版权所有</p>
+        </div>
+    </footer>
+    
+    <!-- 底部导航栏 - 移动端 -->
+    <nav class="mobile-nav">
+        <div class="mobile-nav-items">
+            <a href="bookstore.html" class="mobile-nav-item">
+                <i class="iconfont icon-bookstore mobile-nav-icon"></i>
+                <span class="mobile-nav-text">图书商店</span>
+            </a>
+            <a href="create-video.html" class="mobile-nav-item">
+                <i class="iconfont icon-video-camera mobile-nav-icon"></i>
+                <span class="mobile-nav-text">生成视频</span>
+            </a>
+            <a href="book-square.html" class="mobile-nav-item">
+                <i class="iconfont icon-square mobile-nav-icon"></i>
+                <span class="mobile-nav-text">图书广场</span>
+            </a>
+            <a href="user-center.html" class="mobile-nav-item active">
+                <i class="iconfont icon-user mobile-nav-icon"></i>
+                <span class="mobile-nav-text">个人中心</span>
+            </a>
+        </div>
+    </nav>
+    
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查用户是否已登录
+            function checkLoginStatus() {
+                const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+                const token = localStorage.getItem('token');
+                
+                if (!isLoggedIn || !token) {
+                    showToast('请先登录后再访问', 'error');
+                    // 重定向到登录页面
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1500);
+                    return false;
+                }
+                
+                // 验证token是否有效（这里只是简单检查，实际项目中应发送到服务器验证）
+                try {
+                    const tokenParts = token.split('.');
+                    if (tokenParts.length !== 3) {
+                        throw new Error('无效的token格式');
+                    }
+                    // 解码payload部分
+                    const payload = JSON.parse(atob(tokenParts[1]));
+                    const exp = payload.exp * 1000; // 转换为毫秒
+                    if (Date.now() > exp) {
+                        throw new Error('token已过期');
+                    }
+                    
+                    // 更新页面上的用户名显示
+                    const username = localStorage.getItem('username');
+                    if (username) {
+                        const userGreeting = document.getElementById('userGreeting');
+                        if (userGreeting) {
+                            userGreeting.textContent = `欢迎，${username}`;
+                        }
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Token验证失败:', error);
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('username');
+                    showToast('登录已过期，请重新登录', 'error');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1500);
+                    return false;
+                }
+            }
+            
+            // 如果未登录，直接返回，不执行后续代码
+            if (!checkLoginStatus()) {
+                return;
+            }
+            
+            // 显示提示信息
+            function showToast(message, type = 'info') {
+                // 创建提示元素
+                const toast = document.createElement('div');
+                toast.className = `fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 ease-in-out translate-y-[-20px] opacity-0`;
+                
+                // 设置不同类型的样式
+                if (type === 'success') {
+                    toast.classList.add('bg-green-500', 'text-white');
+                    toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
+                } else if (type === 'error') {
+                    toast.classList.add('bg-red-500', 'text-white');
+                    toast.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i>${message}`;
+                } else {
+                    toast.classList.add('bg-blue-500', 'text-white');
+                    toast.innerHTML = `<i class="fas fa-info-circle mr-2"></i>${message}`;
+                }
+                
+                // 添加到页面
+                document.body.appendChild(toast);
+                
+                // 显示动画
+                setTimeout(() => {
+                    toast.classList.remove('translate-y-[-20px]', 'opacity-0');
+                }, 10);
+                
+                // 自动关闭
+                setTimeout(() => {
+                    toast.classList.add('translate-y-[-20px]', 'opacity-0');
+                    setTimeout(() => {
+                        document.body.removeChild(toast);
+                    }, 300);
+                }, 3000);
+            }
+            // 选项卡切换功能
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // 移除所有活动状态
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // 添加当前活动状态
+                    this.classList.add('active');
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                    
+                    // 根据选项卡加载相应数据
+                    if (tabId === 'collections') {
+                        loadCollections();
+                    } else if (tabId === 'liked') {
+                        loadLikedVideos();
+                    } else if (tabId === 'history') {
+                        loadViewHistory();
+                    } else if (tabId === 'interest-profile') {
+                        loadInterestProfile();
+                    }
+                });
+            });
+            
+            // 加载收藏的视频
+            async function loadCollections() {
+                const collectionsContainer = document.getElementById('collections');
+                if (!collectionsContainer) return;
+                
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                
+                try {
+                    const response = await fetch('/api/user/collections', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success && result.videos) {
+                        if (result.videos.length === 0) {
+                            collectionsContainer.innerHTML = `
+                                <div class="empty-state">
+                                    <i class="iconfont icon-collection"></i>
+                                    <h3>还没有收藏的视频</h3>
+                                    <p>在图书广场发现喜欢的视频并收藏，它们将显示在这里</p>
+                                    <a href="book-square.html"><button>去图书广场逛逛</button></a>
+                                </div>
+                            `;
+                        } else {
+                            collectionsContainer.innerHTML = '<div class="videos-grid"></div>';
+                            const videosGrid = collectionsContainer.querySelector('.videos-grid');
+                            result.videos.forEach(videoData => {
+                                const video = {
+                                    id: videoData.id,
+                                    name: videoData.video_name,
+                                    book_title: videoData.book_title || '',
+                                    book_name: videoData.book_name || '',
+                                    thumbnailUrl: null,
+                                    duration: videoData.duration || '00:00',
+                                    tempUrl: videoData.video_url,
+                                    videoUrl: videoData.video_url,
+                                    originalName: videoData.video_name,
+                                    uploadTime: videoData.created_at,
+                                    status: videoData.status || 'approved',
+                                    views: videoData.views || 0,
+                                    likes: videoData.likes_count || 0,
+                                    collections: videoData.collections_count || 0,
+                                    comments_count: videoData.comments_count || 0,
+                                    uploadUser: videoData.upload_user
+                                };
+                                createVideoCard(video, videosGrid);
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('加载收藏视频失败:', error);
+                }
+            }
+            
+            // 加载点赞的视频
+            async function loadLikedVideos() {
+                const likedContainer = document.getElementById('liked');
+                if (!likedContainer) return;
+                
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                
+                try {
+                    const response = await fetch('/api/user/likes', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success && result.videos) {
+                        if (result.videos.length === 0) {
+                            likedContainer.innerHTML = `
+                                <div class="empty-state">
+                                    <i class="iconfont icon-heart"></i>
+                                    <h3>还没有点赞的视频</h3>
+                                    <p>在图书广场发现喜欢的视频并点赞，它们将显示在这里</p>
+                                    <a href="book-square.html"><button>去图书广场逛逛</button></a>
+                                </div>
+                            `;
+                        } else {
+                            likedContainer.innerHTML = '<div class="videos-grid"></div>';
+                            const videosGrid = likedContainer.querySelector('.videos-grid');
+                            result.videos.forEach(videoData => {
+                                const video = {
+                                    id: videoData.id,
+                                    name: videoData.video_name,
+                                    book_title: videoData.book_title || '',
+                                    book_name: videoData.book_name || '',
+                                    thumbnailUrl: null,
+                                    duration: videoData.duration || '00:00',
+                                    tempUrl: videoData.video_url,
+                                    videoUrl: videoData.video_url,
+                                    originalName: videoData.video_name,
+                                    uploadTime: videoData.created_at,
+                                    status: videoData.status || 'approved',
+                                    views: videoData.views || 0,
+                                    likes: videoData.likes_count || 0,
+                                    collections: videoData.collections_count || 0,
+                                    comments_count: videoData.comments_count || 0,
+                                    uploadUser: videoData.upload_user
+                                };
+                                createVideoCard(video, videosGrid);
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('加载点赞视频失败:', error);
+                }
+            }
+            
+            // 加载浏览历史
+            async function loadViewHistory() {
+                const historyContainer = document.getElementById('history');
+                if (!historyContainer) return;
+                
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                
+                try {
+                    const response = await fetch('/api/user/views', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success && result.videos) {
+                        if (result.videos.length === 0) {
+                            historyContainer.innerHTML = `
+                                <div class="empty-state">
+                                    <i class="iconfont icon-history"></i>
+                                    <h3>暂无浏览历史</h3>
+                                    <p>浏览视频后，您的观看历史将显示在这里</p>
+                                    <a href="book-square.html"><button>去图书广场逛逛</button></a>
+                                </div>
+                            `;
+                        } else {
+                            historyContainer.innerHTML = '<div class="videos-grid"></div>';
+                            const videosGrid = historyContainer.querySelector('.videos-grid');
+                            result.videos.forEach(videoData => {
+                                const video = {
+                                    id: videoData.id,
+                                    name: videoData.video_name,
+                                    book_title: videoData.book_title || '',
+                                    book_name: videoData.book_name || '',
+                                    thumbnailUrl: null,
+                                    duration: videoData.duration || '00:00',
+                                    tempUrl: videoData.video_url,
+                                    videoUrl: videoData.video_url,
+                                    originalName: videoData.video_name,
+                                    uploadTime: videoData.created_at,
+                                    status: videoData.status || 'approved',
+                                    views: videoData.views || 0,
+                                    likes: videoData.likes_count || 0,
+                                    collections: videoData.collections_count || 0,
+                                    comments_count: videoData.comments_count || 0,
+                                    uploadUser: videoData.upload_user
+                                };
+                                createVideoCard(video, videosGrid);
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('加载浏览历史失败:', error);
+                }
+            }
+
+            async function loadInterestProfile() {
+                const container = document.getElementById('interest-profile');
+                if (!container) return;
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                container.innerHTML = '<div style="padding:16px;color:#666;">正在生成兴趣画像...</div>';
+                try {
+                    const response = await fetch('/api/reco/interest-profile?days=90', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    const result = await response.json();
+                    if (!response.ok || !result.success || !result.profile) {
+                        container.innerHTML = '<div class="empty-state"><h3>兴趣画像加载失败</h3><p>请稍后重试</p></div>';
+                        return;
+                    }
+                    const p = result.profile;
+                    const toTagList = (arr = []) => arr.length
+                        ? arr.map((it) => `<span style="display:inline-block;padding:4px 10px;border-radius:999px;background:#eef6ff;color:#1d4ed8;font-size:12px;margin:0 8px 8px 0;">${it.name} (${Number(it.score || 0).toFixed(2)})</span>`).join('')
+                        : '<span style="color:#999;font-size:13px;">暂无数据</span>';
+                    const toStrategy = (arr = []) => arr.length
+                        ? arr.map((it) => `<span style="display:inline-block;padding:4px 10px;border-radius:999px;background:#f3f4f6;color:#334155;font-size:12px;margin:0 8px 8px 0;">${it.strategy}: ${it.count}</span>`).join('')
+                        : '<span style="color:#999;font-size:13px;">暂无数据</span>';
+
+                    container.innerHTML = `
+                        <div style="display:grid;gap:14px;">
+                            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;">
+                                <div style="font-size:15px;font-weight:700;color:#1f2937;">画像概览</div>
+                                <div style="margin-top:8px;color:#475569;font-size:13px;">统计窗口：最近 ${p.lookback_days} 天</div>
+                                <div style="margin-top:4px;color:#475569;font-size:13px;">行为样本：${p.event_rows} 条，信号强度：${Number(p.signal_score || 0).toFixed(2)}</div>
+                            </div>
+                            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;">
+                                <div style="font-size:14px;font-weight:700;color:#1f2937;margin-bottom:8px;">偏好作者 Top</div>
+                                ${toTagList(p.top_authors || [])}
+                            </div>
+                            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;">
+                                <div style="font-size:14px;font-weight:700;color:#1f2937;margin-bottom:8px;">偏好分类 Top</div>
+                                ${toTagList(p.top_categories || [])}
+                            </div>
+                            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;">
+                                <div style="font-size:14px;font-weight:700;color:#1f2937;margin-bottom:8px;">偏好标签 Top</div>
+                                ${toTagList(p.top_tags || [])}
+                            </div>
+                            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;">
+                                <div style="font-size:14px;font-weight:700;color:#1f2937;margin-bottom:8px;">策略命中分布</div>
+                                ${toStrategy(p.strategy_mix || [])}
+                            </div>
+                        </div>
+                    `;
+                } catch (error) {
+                    console.error('加载兴趣画像失败:', error);
+                    container.innerHTML = '<div class="empty-state"><h3>兴趣画像加载失败</h3><p>网络异常，请稍后重试</p></div>';
+                }
+            }
+
+            // 视频上传功能
+            const videoUpload = document.getElementById('videoUpload');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const uploadedVideos = document.getElementById('uploadedVideos');
+            const uploadBookSearch = document.getElementById('uploadBookSearch');
+            const uploadBookOptionsDL = document.getElementById('uploadBookOptionsDL');
+            const uploadBookSelect = document.getElementById('uploadBookSelect');
+            const uploadVideoTags = document.getElementById('uploadVideoTags');
+            const uploadVideoCategory = document.getElementById('uploadVideoCategory');
+            const uploadVideoTopic = document.getElementById('uploadVideoTopic');
+            const uploadVideoTagSuggestions = document.getElementById('uploadVideoTagSuggestions');
+            const uploadTagQuickPicks = document.getElementById('uploadTagQuickPicks');
+            const HOT_TAGS = ['科幻', '悬疑', '奇幻', '历史', '经济', '心理', '人工智能', '机器学习', '治愈', '童话'];
+            let uploadBookOptionsCache = [];
+            let uploadSelectedBook = null;
+
+            function initUploadTagSuggestions() {
+                if (uploadVideoTagSuggestions) {
+                    uploadVideoTagSuggestions.innerHTML = HOT_TAGS.map((tag) => `<option value="${tag}"></option>`).join('');
+                }
+                if (uploadTagQuickPicks) {
+                    uploadTagQuickPicks.innerHTML = HOT_TAGS.map((tag) =>
+                        `<button type="button" data-hot-tag="${tag}" style="padding:4px 8px; border:1px solid #dbeafe; border-radius:999px; background:#eff6ff; color:#1d4ed8; font-size:12px; cursor:pointer;">${tag}</button>`
+                    ).join('');
+                    uploadTagQuickPicks.querySelectorAll('button[data-hot-tag]').forEach((btn) => {
+                        btn.addEventListener('click', () => {
+                            if (!uploadVideoTags) return;
+                            const tag = btn.getAttribute('data-hot-tag');
+                            const existing = uploadVideoTags.value
+                                .split(/[，,]+/)
+                                .map((t) => t.trim())
+                                .filter(Boolean);
+                            if (!existing.includes(tag)) existing.push(tag);
+                            uploadVideoTags.value = existing.join(', ');
+                        });
+                    });
+                }
+            }
+
+            function selectUploadBookById(id) {
+                const bid = Number(id || 0);
+                if (!bid) {
+                    uploadBookSelect.value = '';
+                    uploadSelectedBook = null;
+                    return;
+                }
+                const hit = uploadBookOptionsCache.find((b) => Number(b.id) === bid) || null;
+                if (!hit) {
+                    uploadBookSelect.value = '';
+                    uploadSelectedBook = null;
+                    return;
+                }
+                uploadBookSelect.value = String(bid);
+                uploadSelectedBook = hit;
+                if (uploadBookSearch) {
+                    uploadBookSearch.value = `${hit.title || '未命名图书'} - ${hit.author || '未知作者'}`;
+                }
+            }
+
+            function syncUploadBookSelectionFromInput() {
+                if (!uploadBookSearch) return;
+                const raw = String(uploadBookSearch.value || '').trim();
+                if (!raw) {
+                    uploadBookSelect.value = '';
+                    uploadSelectedBook = null;
+                    return;
+                }
+                const lower = raw.toLowerCase();
+                let hit = uploadBookOptionsCache.find((b) => `${b.title || ''} - ${b.author || ''}`.toLowerCase() === lower);
+                if (!hit) {
+                    const byTitle = uploadBookOptionsCache.filter((b) => String(b.title || '').toLowerCase() === lower);
+                    if (byTitle.length === 1) hit = byTitle[0];
+                }
+                if (!hit) {
+                    const fuzzy = uploadBookOptionsCache.filter((b) => {
+                        const t = String(b.title || '').toLowerCase();
+                        const a = String(b.author || '').toLowerCase();
+                        return t.includes(lower) || a.includes(lower);
+                    });
+                    if (fuzzy.length === 1) hit = fuzzy[0];
+                }
+                if (hit) {
+                    selectUploadBookById(hit.id);
+                } else {
+                    uploadBookSelect.value = '';
+                    uploadSelectedBook = null;
+                }
+            }
+
+            function renderUploadBookOptions(keyword = '') {
+                const kw = String(keyword || '').trim().toLowerCase();
+                const selectedBefore = String(uploadBookSelect?.value || '');
+                const list = !kw
+                    ? uploadBookOptionsCache
+                    : uploadBookOptionsCache.filter((book) => {
+                        const t = String(book.title || '').toLowerCase();
+                        const a = String(book.author || '').toLowerCase();
+                        const i = String(book.isbn || '').toLowerCase();
+                        return t.includes(kw) || a.includes(kw) || i.includes(kw);
+                    });
+
+                const options = ['<option value="">请选择要关联的图书</option>'];
+                list.forEach((book) => {
+                    const id = Number(book.id);
+                    if (!id) return;
+                    const title = String(book.title || '未命名图书');
+                    const author = String(book.author || '未知作者');
+                    options.push(`<option value="${id}">${title} - ${author}</option>`);
+                });
+                uploadBookSelect.innerHTML = options.join('');
+                if (selectedBefore && list.some((b) => String(b.id) === selectedBefore)) {
+                    uploadBookSelect.value = selectedBefore;
+                }
+                if (uploadBookOptionsDL) {
+                    uploadBookOptionsDL.innerHTML = list
+                        .map((book) => {
+                            const title = String(book.title || '未命名图书');
+                            const author = String(book.author || '未知作者');
+                            return `<option value="${title} - ${author}"></option>`;
+                        })
+                        .join('');
+                }
+            }
+
+            async function loadUploadBookOptions() {
+                try {
+                    const res = await fetch('/api/books?page=1&limit=1000&sortBy=title&sortOrder=asc');
+                    const data = await res.json();
+                    if (!res.ok || !data.success || !Array.isArray(data.books)) return;
+                    uploadBookOptionsCache = data.books.slice();
+                    renderUploadBookOptions('');
+                } catch (err) {
+                    console.warn('加载图书选项失败:', err);
+                }
+            }
+
+            if (uploadBookSearch) {
+                uploadBookSearch.addEventListener('input', () => {
+                    renderUploadBookOptions(uploadBookSearch.value);
+                    syncUploadBookSelectionFromInput();
+                });
+                uploadBookSearch.addEventListener('change', syncUploadBookSelectionFromInput);
+                uploadBookSearch.addEventListener('blur', syncUploadBookSelectionFromInput);
+            }
+
+            // 从服务器加载视频
+            async function loadVideosFromServer() {
+                try {
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                        return;
+                    }
+
+                    const response = await fetch('/api/user/videos', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    const result = await response.json();
+                    if (result.success && result.videos) {
+                        // 清空现有视频列表
+                        uploadedVideos.innerHTML = '';
+
+                        if (result.videos.length > 0) {
+                            // 添加视频卡片
+                            result.videos.forEach(videoData => {
+                                // 转换数据库格式到前端格式
+                                const video = {
+                                    id: videoData.id,
+                                    name: videoData.video_name,
+                                    book_title: videoData.book_title || '',
+                                    book_name: videoData.book_name || '',
+                                    thumbnailUrl: null,
+                                    duration: videoData.duration || '00:00',
+                                    tempUrl: videoData.video_url, // 服务器上的视频URL
+                                    videoUrl: videoData.video_url,
+                                    originalName: videoData.video_name,
+                                    uploadTime: videoData.created_at,
+                                    status: videoData.status || 'draft',
+                                    is_banned: videoData.is_banned || 0,
+                                    views: videoData.views || 0,
+                                    likes: videoData.likes_count || 0,
+                                    collections: videoData.collections_count || 0,
+                                    comments_count: videoData.comments_count || 0
+                                };
+                                
+                                createVideoCard(video);
+                            });
+                        } else {
+                            // 显示空状态
+                            const emptyState = document.createElement('div');
+                            emptyState.className = 'empty-state';
+                            emptyState.innerHTML = `
+                                <i class="iconfont icon-video"></i>
+                                <h3>还没有上传视频</h3>
+                                <p>上传本地视频，它们将显示在这里</p>
+                            `;
+                            uploadedVideos.appendChild(emptyState);
+                        }
+                    }
+                } catch (error) {
+                    console.error('从服务器加载视频失败:', error);
+                    // 如果服务器加载失败，尝试从localStorage加载（向后兼容）
+                    loadVideosFromStorage();
+                }
+            }
+
+            // 从localStorage加载视频（向后兼容）
+            function loadVideosFromStorage() {
+                try {
+                    const videos = JSON.parse(localStorage.getItem('userVideos') || '[]');
+                    
+                    if (videos.length > 0) {
+                        // 移除空状态
+                        const emptyState = uploadedVideos.querySelector('.empty-state');
+                        if (emptyState) {
+                            uploadedVideos.removeChild(emptyState);
+                        }
+                        
+                        // 添加视频卡片
+                        videos.forEach(videoData => {
+                            createVideoCard(videoData);
+                        });
+                    }
+                } catch (error) {
+                    console.error('加载视频失败:', error);
+                }
+            }
+
+            // 创建视频卡片
+            function createVideoCard(videoData, container) {
+                // 如果没有指定容器，使用默认的uploadedVideos
+                if (!container) {
+                    container = uploadedVideos;
+                }
+                
+                const videoCard = document.createElement('div');
+                videoCard.className = 'video-card';
+                // 使用tempUrl作为视频源
+                videoCard.setAttribute('data-video-src', videoData.tempUrl);
+                videoCard.setAttribute('data-video-id', videoData.id);
+                // 保存原始文件信息
+                videoCard.setAttribute('data-original-name', videoData.originalName || '');
+                videoCard.setAttribute('data-file-size', videoData.fileSize || '');
+                videoCard.setAttribute('data-file-type', videoData.fileType || '');
+                videoCard.setAttribute('data-upload-time', videoData.uploadTime || '');
+                
+                // 根据视频状态设置状态标签（优先检查is_banned）
+                let statusClass = 'draft';
+                let statusText = '未发布';
+                
+                // 如果视频被下架，优先显示下架状态
+                if (videoData.is_banned === 1 || videoData.is_banned === true) {
+                    statusClass = 'banned';
+                    statusText = '已下架';
+                } else if (videoData.status === 'approved') {
+                    statusClass = 'approved';
+                    statusText = '已发布';
+                } else if (videoData.status === 'pending') {
+                    statusClass = 'pending';
+                    statusText = '审核中';
+                } else if (videoData.status === 'rejected') {
+                    statusClass = 'rejected';
+                    statusText = '未通过';
+                }
+                
+                // 设置视频卡片内容
+                // 使用默认占位图（和图书广场保持一致，确保同一视频显示相同图片）
+                const placeholderId = getVideoThumbnailId(videoData.id);
+                const defaultPlaceholder = `https://picsum.photos/id/${placeholderId}/400/225`;
+                // 只有当thumbnailUrl是有效的data URI或blob URI时才使用，否则使用默认占位图
+                let thumbnailSrc = defaultPlaceholder;
+                if (videoData.thumbnailUrl && typeof videoData.thumbnailUrl === 'string') {
+                    if (videoData.thumbnailUrl.startsWith('data:image') || videoData.thumbnailUrl.startsWith('blob:') || videoData.thumbnailUrl.startsWith('http://') || videoData.thumbnailUrl.startsWith('https://')) {
+                        thumbnailSrc = videoData.thumbnailUrl;
+                    }
+                }
+                // 转义HTML特殊字符，防止XSS
+                const safeName = (videoData.name || '视频').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                const safeBookName = String(videoData.book_title || videoData.book_name || '未关联图书')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+                videoCard.innerHTML = `
+                    <div class="video-thumbnail">
+                        <img src="${thumbnailSrc}" alt="${safeName}" onerror="this.onerror=null; this.src='${defaultPlaceholder}';">
+                        <div class="video-duration">${videoData.duration}</div>
+                        <div class="video-status ${statusClass}">${statusText}</div>
+                        <div class="video-play-btn">
+                            <i class="iconfont icon-play"></i>
+                        </div>
+                    </div>
+                    <div class="video-info">
+                        <div class="video-title">${videoData.name}</div>
+                        <div class="video-meta">
+                            <div class="book-info">
+                                <i class="iconfont icon-book"></i>
+                                <span>${safeBookName}</span>
+                            </div>
+                        </div>
+                        <div class="video-stats">
+                            <div class="stat-item">
+                                <i class="iconfont icon-heart"></i>
+                                <span>${videoData.likes || videoData.likes_count || 0}</span>
+                            </div>
+                            <div class="stat-item">
+                                <i class="iconfont icon-collection"></i>
+                                <span>${videoData.collections || videoData.collections_count || 0}</span>
+                            </div>
+                            <div class="stat-item">
+                                <i class="iconfont icon-comment"></i>
+                                <span>${videoData.comments_count || 0}</span>
+                            </div>
+                        </div>
+                        ${videoData.uploadUser ? `
+                        <div class="video-user" style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+                            <div class="user-avatar-small" style="width: 24px; height: 24px; border-radius: 50%; overflow: hidden;">
+                                <img src="https://picsum.photos/id/${getUserIdHash(videoData.uploadUser || videoData.id)}/100/100" alt="用户头像" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+                            <div class="username" style="font-size: 14px; color: #666;">${videoData.uploadUser}</div>
+                        </div>
+                        ` : ''}
+                        <div class="video-actions">
+                            <button class="video-action-btn edit" onclick="window.editVideo('${videoData.id}', '${(videoData.videoUrl || videoData.tempUrl || videoData.url || '').replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
+                                <i class="fas fa-edit"></i>
+                                <span>编辑</span>
+                            </button>
+                            <button class="video-action-btn share">
+                                <i class="iconfont icon-share"></i>
+                                <span>分享</span>
+                            </button>
+                            ${!videoData.uploadUser ? `
+                            <button class="video-action-btn delete">
+                                <i class="iconfont icon-delete"></i>
+                                <span>删除</span>
+                            </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                // 添加视频卡片到列表
+                container.appendChild(videoCard);
+                
+                return videoCard;
+            }
+            
+            // 统一的视频占位图ID生成函数（确保同一视频在不同页面显示相同图片）
+            function getVideoThumbnailId(videoId) {
+                if (!videoId) return 24;
+                const idNum = parseInt(videoId) || 0;
+                // 使用视频ID生成24-123之间的占位图ID，确保同一视频ID总是得到相同的占位图
+                return (idNum % 100) + 24;
+            }
+            
+            // 简单的哈希函数，用于生成不同的用户头像
+            function getUserIdHash(userId) {
+                if (!userId) return 1;
+                let hash = 0;
+                const str = String(userId);
+                for (let i = 0; i < str.length; i++) {
+                    const char = str.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // 转换为32位整数
+                }
+                return Math.abs(hash) % 1000 + 1; // 1-1000的范围
+            }
+
+            // 保存视频到localStorage
+            function saveVideosToStorage() {
+                try {
+                    const videos = [];
+                    const videoCards = document.querySelectorAll('.video-card');
+                    
+                    videoCards.forEach(card => {
+                        const id = card.getAttribute('data-video-id');
+                        const name = card.querySelector('.video-title').textContent;
+                        const thumbnailUrl = card.querySelector('.video-thumbnail img').src;
+                        const duration = card.querySelector('.video-duration').textContent;
+                        const views = parseInt(card.querySelector('.stat-item:nth-child(1) span').textContent);
+                        const likes = parseInt(card.querySelector('.stat-item:nth-child(2) span').textContent);
+                        const collections = parseInt(card.querySelector('.stat-item:nth-child(3) span').textContent);
+                        
+                        // 获取状态元素并保存状态
+                        const statusElement = card.querySelector('.video-status');
+                        const statusClass = statusElement.className;
+                        let status = 'draft';
+                        
+                        if (statusClass.includes('banned')) {
+                            status = 'banned';
+                        } else if (statusClass.includes('approved')) {
+                            status = 'approved';
+                        } else if (statusClass.includes('pending')) {
+                            status = 'pending';
+                        } else if (statusClass.includes('rejected')) {
+                            status = 'rejected';
+                        }
+                        
+                        // 获取视频源URL并保存
+                        const tempUrl = card.getAttribute('data-video-src');
+                        
+                        videos.push({
+                            id,
+                            name,
+                            thumbnailUrl,
+                            duration,
+                            views,
+                            likes,
+                            collections,
+                            status,
+                            tempUrl,
+                            // 保存原始文件信息，而不仅仅是临时的blob URL
+                            originalName: card.getAttribute('data-original-name'),
+                            fileSize: card.getAttribute('data-file-size'),
+                            fileType: card.getAttribute('data-file-type'),
+                            uploadTime: card.getAttribute('data-upload-time')
+                        });
+                    });
+                    
+                    localStorage.setItem('userVideos', JSON.stringify(videos));
+                } catch (error) {
+                    console.error('保存视频失败:', error);
+                }
+            }
+            
+            // 检查视频状态变化（管理端审核后同步）
+            // 注意：此函数已被loadVideosFromServer替代，定期从服务器刷新即可
+            function checkVideoStatusChanges() {
+                // 这个函数已经被废弃，因为loadVideosFromServer会定期从服务器获取最新状态
+                // 保留此函数以防其他地方调用，但实际逻辑由loadVideosFromServer处理
+                loadVideosFromServer();
+            }
+
+            // 初始化页面时从服务器加载视频
+            loadUploadBookOptions();
+            initUploadTagSuggestions();
+            loadVideosFromServer();
+            
+            // 定期从服务器刷新视频列表（每5秒检查一次，同步状态）
+            setInterval(loadVideosFromServer, 5000);
+            
+            // 当页面获得焦点时立即刷新（用户从管理端审核后切回个人中心时）
+            window.addEventListener('focus', function() {
+                loadVideosFromServer();
+            });
+            
+            // 页面可见性变化时刷新（用户切换标签页回来时）
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    loadVideosFromServer();
+                }
+            });
+
+            videoUpload.addEventListener('change', async function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    syncUploadBookSelectionFromInput();
+                    const selectedBookId = Number(uploadBookSelect?.value || 0);
+                    if (!selectedBookId) {
+                        showToast('请在关联图书输入框中选择有效图书', 'warning');
+                        e.target.value = '';
+                        return;
+                    }
+                    const selectedBookTitle = String(uploadSelectedBook?.title || uploadBookSearch?.value || '未命名图书');
+                    const tagsText = (uploadVideoTags?.value || '').trim();
+                    if (!tagsText) {
+                        showToast('请至少填写 1 个视频标签', 'warning');
+                        e.target.value = '';
+                        return;
+                    }
+                    const categoryText = (uploadVideoCategory?.value || '').trim();
+                    const topicText = (uploadVideoTopic?.value || '').trim();
+                    // 检查文件类型是否为视频
+                    if (!file.type.startsWith('video/')) {
+                        showToast('请上传视频文件', 'error');
+                        return;
+                    }
+
+                    // 显示上传状态
+                    uploadStatus.textContent = `正在上传: ${file.name}`;
+                    uploadStatus.style.color = '#1a73e8';
+
+                    try {
+                        const token = localStorage.getItem('token');
+                        if (!token) {
+                            showToast('请先登录', 'error');
+                            return;
+                        }
+
+                        // 第一步：上传视频文件到服务器
+                        const formData = new FormData();
+                        formData.append('video', file);
+
+                        const uploadResponse = await fetch('/api/video/upload', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: formData
+                        });
+
+                        const uploadResult = await uploadResponse.json();
+                        if (!uploadResult.success) {
+                            throw new Error(uploadResult.message || '上传失败');
+                        }
+
+                        // 第二步：生成视频缩略图和获取时长
+                        const videoUrl = URL.createObjectURL(file);
+                        const video = document.createElement('video');
+                        video.preload = 'metadata';
+                        video.src = videoUrl;
+                        
+                        await new Promise((resolve, reject) => {
+                            video.onloadedmetadata = function() {
+                                resolve();
+                            };
+                            video.onerror = reject;
+                        });
+
+                        // 创建canvas获取第一帧作为缩略图
+                        const canvas = document.createElement('canvas');
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        const thumbnailUrl = canvas.toDataURL('image/jpeg');
+                        
+                        // 格式化视频时长
+                        const duration = video.duration;
+                        const minutes = Math.floor(duration / 60);
+                        const seconds = Math.floor(duration % 60);
+                        const formattedDuration = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+                        // 第三步：保存视频信息到数据库
+                        const saveResponse = await fetch('/api/video/save-to-library', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                videoUrl: uploadResult.data.videoUrl,
+                                videoName: uploadResult.data.videoName,
+                                bookName: selectedBookTitle,
+                                book_id: selectedBookId,
+                                video_tags: tagsText,
+                                video_category: categoryText,
+                                video_topic: topicText,
+                                author: '', // 可以留空，后端会使用用户名
+                                duration: formattedDuration,
+                                description: ''
+                            })
+                        });
+
+                        const saveResult = await saveResponse.json();
+                        if (!saveResult.success) {
+                            throw new Error(saveResult.message || '保存失败');
+                        }
+
+                        // 第四步：创建视频数据对象并显示
+                        const videoData = {
+                            id: saveResult.data.videoId,
+                            name: uploadResult.data.videoName,
+                            book_title: selectedBookTitle || '未关联图书',
+                            book_name: selectedBookTitle || '未关联图书',
+                            thumbnailUrl: thumbnailUrl,
+                            duration: formattedDuration,
+                            tempUrl: videoUrl, // 临时blob URL用于当前会话播放
+                            videoUrl: uploadResult.data.videoUrl, // 服务器上的视频URL
+                            originalName: file.name,
+                            fileSize: file.size,
+                            fileType: file.type,
+                            uploadTime: new Date().toISOString(),
+                            status: 'draft', // 初始状态为草稿
+                            views: 0,
+                            likes: 0,
+                            collections: 0
+                        };
+                        
+                        // 移除空状态（如果存在）
+                        const emptyState = uploadedVideos.querySelector('.empty-state');
+                        if (emptyState) {
+                            uploadedVideos.removeChild(emptyState);
+                        }
+                        
+                        // 创建视频卡片
+                        createVideoCard(videoData);
+                        
+                        // 更新上传状态
+                        uploadStatus.textContent = `上传成功: ${file.name}`;
+                        uploadStatus.style.color = '#2ed573';
+                        showToast('视频上传成功，等待审核', 'success');
+                        
+                        // 重新加载视频列表（从数据库）
+                        loadVideosFromServer();
+                        if (uploadVideoTags) uploadVideoTags.value = '';
+                        if (uploadVideoCategory) uploadVideoCategory.value = '';
+                        if (uploadVideoTopic) uploadVideoTopic.value = '';
+                        
+                        // 3秒后清除上传状态
+                        setTimeout(() => {
+                            uploadStatus.textContent = '';
+                        }, 3000);
+
+                    } catch (error) {
+                        console.error('上传视频失败:', error);
+                        uploadStatus.textContent = `上传失败: ${error.message}`;
+                        uploadStatus.style.color = '#ff4757';
+                        showToast('上传失败: ' + error.message, 'error');
+                    } finally {
+                        // 清空文件选择
+                        e.target.value = '';
+                    }
+                }
+            });
+
+            // 使用全局事件委托处理所有视频卡片的交互（包括所有标签页）
+            document.addEventListener('click', function(e) {
+                const videoCard = e.target.closest('.video-card');
+                if (!videoCard) return;
+                
+                // 点击非统计项和操作按钮区域时播放视频
+                if (!e.target.closest('.stat-item') && !e.target.closest('.video-actions') && !e.target.closest('.user-info')) {
+                    const videoSrc = videoCard.getAttribute('data-video-src');
+                    const originalName = videoCard.getAttribute('data-original-name') || videoCard.querySelector('.video-title')?.textContent || '视频';
+                    
+                    if (videoSrc) {
+                        // 直接打开视频URL播放
+                        if (videoSrc.startsWith('http://') || videoSrc.startsWith('https://') || videoSrc.startsWith('/')) {
+                            window.open(videoSrc, '_blank');
+                        } else {
+                            // 对于相对路径，直接创建本地视频播放器播放视频
+                            setupVideoPlayer(videoSrc, originalName);
+                        }
+                    }
+                }
+                
+                // 点赞功能
+                const likeBtn = e.target.closest('.stat-item:nth-child(2)');
+                if (likeBtn) {
+                    e.stopPropagation();
+                    likeBtn.classList.toggle('liked');
+                    const likeCount = likeBtn.querySelector('span');
+                    if (likeBtn.classList.contains('liked')) {
+                        likeCount.textContent = (parseInt(likeCount.textContent) + 1).toString();
+                    } else {
+                        likeCount.textContent = (parseInt(likeCount.textContent) - 1).toString();
+                    }
+                    saveVideosToStorage();
+                    return;
+                }
+                
+                // 收藏功能
+                const collectBtn = e.target.closest('.stat-item:nth-child(3)');
+                if (collectBtn) {
+                    e.stopPropagation();
+                    collectBtn.classList.toggle('collected');
+                    const collectCount = collectBtn.querySelector('span');
+                    if (collectBtn.classList.contains('collected')) {
+                        collectCount.textContent = (parseInt(collectCount.textContent) + 1).toString();
+                    } else {
+                        collectCount.textContent = (parseInt(collectCount.textContent) - 1).toString();
+                    }
+                    saveVideosToStorage();
+                    return;
+                }
+                
+                // 分享功能
+                const shareBtn = e.target.closest('.video-action-btn.share');
+                if (shareBtn) {
+                    e.stopPropagation();
+                    const videoTitle = videoCard.querySelector('.video-title').textContent;
+                    const videoId = videoCard.getAttribute('data-video-id');
+                    
+                    // 获取视频状态
+                    const statusElement = videoCard.querySelector('.video-status');
+                    const statusClass = statusElement.className;
+                    let currentStatus = 'draft';
+                    
+                    if (statusClass.includes('approved')) {
+                        currentStatus = 'approved';
+                    } else if (statusClass.includes('pending')) {
+                        currentStatus = 'pending';
+                    } else if (statusClass.includes('rejected')) {
+                        currentStatus = 'rejected';
+                    }
+                    
+                    if (currentStatus === 'approved') {
+                        // 只有已发布的视频才能分享
+                        // 构建分享链接
+                        const shareUrl = `${window.location.origin}${window.location.pathname.replace('user-center.html', 'book-square.html')}?videoId=${videoId}`;
+                        
+                        // 复制分享链接到剪贴板
+                        navigator.clipboard.writeText(shareUrl).then(() => {
+                            showToast('分享链接已复制到剪贴板', 'success');
+                        }).catch(err => {
+                            console.error('复制失败:', err);
+                            showToast('复制失败，请手动复制链接', 'error');
+                        });
+                    } else if (currentStatus === 'pending') {
+                        // 审核中的视频显示提交申请提示
+                        showToast('视频正在审核中，请等待审核通过后再分享', 'info');
+                    } else if (currentStatus === 'draft') {
+                        // 如果视频是草稿状态，用户点击分享时将其状态设置为审核中
+                        const token = localStorage.getItem('token');
+                        if (!token) {
+                            showToast('请先登录', 'error');
+                            return;
+                        }
+
+                        // 调用API更新视频状态为pending
+                        fetch(`/api/user/videos/${videoId}/status`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                status: 'pending'
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(result => {
+                            if (result.success) {
+                                // 更新UI显示
+                                statusElement.className = 'video-status pending';
+                                statusElement.textContent = '审核中';
+                                showToast('视频已提交审核，请等待审核通过后再分享', 'success');
+                                // 重新加载视频列表以同步状态
+                                loadVideosFromServer();
+                            } else {
+                                showToast('提交审核失败: ' + result.message, 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('提交审核失败:', error);
+                            showToast('提交审核失败，请稍后重试', 'error');
+                        });
+                    } else {
+                        // 其他状态（如rejected）
+                        showToast('视频审核未通过，请修改后重新提交', 'info');
+                    }
+                    return;
+                }
+                
+                // 删除功能
+                const deleteBtn = e.target.closest('.video-action-btn.delete');
+                if (deleteBtn) {
+                    e.stopPropagation();
+                    if (confirm('确定要删除这个视频吗？删除后将无法恢复。')) {
+                        const videoTitle = videoCard.querySelector('.video-title').textContent;
+                        const videoId = videoCard.getAttribute('data-video-id');
+                        
+                        const token = localStorage.getItem('token');
+                        if (!token) {
+                            showToast('请先登录', 'error');
+                            return;
+                        }
+
+                        // 调用后端API删除视频
+                        fetch(`/api/user/videos/${videoId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(result => {
+                            if (result.success) {
+                                videoCard.style.opacity = '0.5';
+                                setTimeout(() => {
+                                    videoCard.remove();
+                                    
+                                    // 如果没有视频了，显示空状态
+                                    if (uploadedVideos.querySelectorAll('.video-card').length === 0) {
+                                        const emptyState = document.createElement('div');
+                                        emptyState.className = 'empty-state';
+                                        emptyState.innerHTML = `
+                                            <i class="iconfont icon-video"></i>
+                                            <h3>还没有上传视频</h3>
+                                            <p>上传本地视频，它们将显示在这里</p>
+                                        `;
+                                        uploadedVideos.appendChild(emptyState);
+                                    }
+                                    
+                                    showToast('视频已成功删除', 'success');
+                                }, 500);
+                            } else {
+                                showToast('删除失败: ' + result.message, 'error');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('删除视频失败:', error);
+                            showToast('删除失败，请稍后重试', 'error');
+                        });
+                    }
+                    return;
+                }
+            });
+            
+            // 加载更多按钮
+            const loadMoreBtns = document.querySelectorAll('.load-more-btn');
+            loadMoreBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // 显示加载动画
+                    this.innerHTML = '<i class="iconfont icon-loading"></i> 加载中...';
+                    this.disabled = true;
+                    
+                    // 模拟加载延迟
+                    setTimeout(() => {
+                        // 恢复按钮状态
+                        this.innerHTML = '加载更多';
+                        this.disabled = false;
+                        
+                        // 这里可以添加加载更多视频的逻辑
+                        alert('已加载全部内容');
+                    }, 2000);
+                });
+            });
+            
+            // 更新左侧个人信息显示
+            function updateLeftSidebarProfile(user) {
+                const userNameElement = document.querySelector('.user-name');
+                const userBioElement = document.querySelector('.user-bio');
+                
+                if (userNameElement && user.username) {
+                    userNameElement.textContent = user.username;
+                }
+                
+                if (userBioElement) {
+                    userBioElement.textContent = user.bio || '这个人很懒，什么都没留下~';
+                }
+                
+                // 更新localStorage中的username
+                if (user.username) {
+                    localStorage.setItem('username', user.username);
+                }
+                
+                // 更新统计数据（如果后端返回了统计数据）
+                if (user.stats) {
+                    const statNumbers = document.querySelectorAll('.stat-number');
+                    if (statNumbers.length >= 3) {
+                        // 格式化数字显示
+                        const formatNumber = (num) => {
+                            const numValue = parseInt(num) || 0;
+                            if (numValue >= 1000) {
+                                const k = numValue / 1000;
+                                if (k % 1 === 0) {
+                                    return k + 'k';
+                                } else {
+                                    return k.toFixed(1) + 'k';
+                                }
+                            }
+                            return numValue.toString();
+                        };
+                        
+                        // 第一个统计：创作视频
+                        statNumbers[0].textContent = formatNumber(user.stats.createdVideos || 0);
+                        // 第二个统计：收藏视频
+                        statNumbers[1].textContent = formatNumber(user.stats.collectedVideos || 0);
+                        // 第三个统计：总播放量
+                        statNumbers[2].textContent = formatNumber(user.stats.totalViews || 0);
+                    }
+                }
+                // 如果没有统计数据，保持原有显示（向后兼容）
+            }
+            
+            // 存储原始用户信息，用于判断是否修改
+            let originalUserData = null;
+            
+            // 加载用户信息
+            async function loadUserProfile() {
+                try {
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                        return;
+                    }
+                    
+                    const response = await fetch('/api/user/profile', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success && result.user) {
+                        const user = result.user;
+                        
+                        // 保存原始用户数据
+                        originalUserData = {
+                            email: user.email || '',
+                            bio: user.bio || ''
+                        };
+                        
+                        // 更新左侧个人信息显示（包括统计数据）
+                        updateLeftSidebarProfile(user);
+                        
+                        const settingsForm = document.querySelector('.settings-form');
+                        if (settingsForm) {
+                            // 填充用户信息到表单
+                            const usernameInput = settingsForm.querySelector('.form-input[type="text"]');
+                            const emailInput = settingsForm.querySelector('.form-input[type="email"]');
+                            const bioTextarea = settingsForm.querySelector('.form-textarea');
+                            
+                            if (usernameInput) usernameInput.value = user.username || '';
+                            if (emailInput) emailInput.value = user.email || '';
+                            if (bioTextarea) bioTextarea.value = user.bio || '';
+                        }
+                    }
+                } catch (error) {
+                    console.error('加载用户信息失败:', error);
+                }
+            }
+            
+            // 设置表单提交
+            const settingsForm = document.querySelector('.settings-form');
+            if (settingsForm) {
+                settingsForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                        showToast('请先登录', 'error');
+                        return;
+                    }
+                    
+                    // 获取表单数据
+                    const emailInput = settingsForm.querySelector('.form-input[type="email"]');
+                    const bioTextarea = settingsForm.querySelector('.form-textarea');
+                    const passwordInputs = settingsForm.querySelectorAll('.form-input[type="password"]');
+                    const passwordInput = passwordInputs.length > 0 ? passwordInputs[0] : null;
+                    const confirmPasswordInput = passwordInputs.length > 1 ? passwordInputs[1] : null;
+                    
+                    const email = emailInput ? emailInput.value.trim() : '';
+                    const bio = bioTextarea ? bioTextarea.value.trim() : '';
+                    const password = passwordInput ? passwordInput.value.trim() : '';
+                    const confirmPassword = confirmPasswordInput ? confirmPasswordInput.value.trim() : '';
+                    
+                    // 检查是否修改了密码（只要填写了密码就认为修改了）
+                    const hasPasswordChanged = password && password.length > 0;
+                    
+                    console.log('保存设置 - 密码字段值:', password ? '***' : '(空)');
+                    console.log('保存设置 - 密码长度:', password ? password.length : 0);
+                    console.log('保存设置 - 是否修改密码:', hasPasswordChanged);
+                    
+                    // 验证密码（如果填写了密码）
+                    if (hasPasswordChanged) {
+                        if (password.length < 6) {
+                            showToast('密码长度至少6位', 'error');
+                            return;
+                        }
+                        
+                        if (password !== confirmPassword) {
+                            showToast('两次输入的密码不一致', 'error');
+                            return;
+                        }
+                    }
+                    
+                    // 构建请求数据（发送所有字段，让后端决定更新哪些）
+                    const requestData = {};
+                    // 始终发送email和bio（即使为空），让后端处理
+                    requestData.email = email || '';
+                    requestData.bio = bio || '';
+                    if (hasPasswordChanged) {
+                        requestData.password = password;
+                        requestData.confirmPassword = confirmPassword;
+                    }
+                    
+                    console.log('准备发送的请求数据 - email:', requestData.email);
+                    console.log('准备发送的请求数据 - bio:', requestData.bio);
+                    console.log('准备发送的请求数据 - 有密码:', !!requestData.password);
+                    
+                    try {
+                        console.log('=== 开始发送API请求 ===');
+                        const response = await fetch('/api/user/profile', {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify(requestData)
+                        });
+                        
+                        console.log('=== API响应状态:', response.status, '===');
+                        
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error('API请求失败:', response.status, errorText);
+                            try {
+                                const errorResult = JSON.parse(errorText);
+                                showToast(errorResult.message || '保存失败', 'error');
+                            } catch (e) {
+                                showToast('保存失败，请稍后重试', 'error');
+                            }
+                            return;
+                        }
+                        
+                        const result = await response.json();
+                        console.log('=== API返回结果 ===', result);
+                        console.log('=== hasPasswordChanged ===', hasPasswordChanged);
+                        
+                        if (result.success) {
+                            // 如果修改了密码，立即跳转到登录页面
+                            if (hasPasswordChanged) {
+                                console.log('=== 检测到密码已修改，立即执行跳转 ===');
+                                
+                                // 立即清除所有登录信息
+                                localStorage.clear();
+                                console.log('=== 已清除登录信息 ===');
+                                
+                                // 立即跳转到登录页面（使用新密码登录）
+                                console.log('=== 执行跳转到 login.html ===');
+                                window.location.href = 'login.html';
+                                
+                                // 强制跳转（双重保险）
+                                setTimeout(function() {
+                                    window.location.replace('login.html');
+                                }, 50);
+                                
+                                return; // 立即返回，不执行后续代码
+                            } else {
+                                // 如果没有修改密码，更新显示
+                                showToast(result.message || '设置已保存', 'success');
+                                
+                                // 重新加载用户信息以更新左侧显示和表单
+                                loadUserProfile();
+                            }
+                        } else {
+                            showToast(result.message || '保存失败', 'error');
+                            console.error('保存设置失败:', result.message);
+                        }
+                    } catch (error) {
+                        console.error('保存设置异常:', error);
+                        console.error('错误详情:', error.stack);
+                        showToast('网络错误，请稍后重试', 'error');
+                    }
+                });
+            }
+            
+            // 取消按钮
+            const cancelBtn = document.querySelector('.cancel-btn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    alert('操作已取消');
+                });
+            }
+
+            const logoutBtn = document.getElementById('logout-btn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    const ok = confirm('确定退出当前账号并返回登录页吗？');
+                    if (!ok) return;
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('username');
+                    localStorage.removeItem('adminLoggedIn');
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('isLoggedIn');
+                    showToast('已退出登录', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 200);
+                });
+            }
+            
+            // 页面加载时立即获取并显示用户信息（在所有函数定义和事件绑定完成后）
+            loadUserProfile();
+            
+            // 编辑个人资料按钮
+            const editProfileBtn = document.querySelector('.action-btn:nth-child(2)');
+            if (editProfileBtn) {
+                editProfileBtn.addEventListener('click', function() {
+                    // 切换到设置标签页
+                    tabs.forEach(tab => {
+                        if (tab.getAttribute('data-tab') === 'settings') {
+                            tab.click();
+                        }
+                    });
+                });
+            }
+            
+            // 格式化文件大小
+            function formatFileSize(bytes) {
+                if (typeof bytes === 'string') {
+                    bytes = parseInt(bytes);
+                }
+                if (bytes === 0) return '0 Bytes';
+                
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            // 格式化日期
+            function formatDate(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString);
+                return date.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+            
+
+            
+            // 设置视频播放器并播放视频
+            // 编辑视频函数 - 跳转到视频编辑页面
+            function editVideo(videoId, videoUrl) {
+                if (!videoUrl || videoUrl === 'undefined' || videoUrl === 'null' || videoUrl.trim() === '') {
+                    showToast('视频URL不存在，无法编辑', 'error');
+                    console.error('视频URL无效:', { videoId, videoUrl });
+                    return;
+                }
+                
+                // 将视频信息存储到sessionStorage，供编辑页面使用
+                sessionStorage.setItem('editVideoId', videoId);
+                sessionStorage.setItem('editVideoUrl', videoUrl);
+                
+                // 跳转到视频编辑页面
+                window.location.href = `video-editor.html?id=${videoId}`;
+            }
+            
+            // 将editVideo函数暴露到全局作用域，供HTML中的onclick调用
+            window.editVideo = editVideo;
+            
+            function setupVideoPlayer(videoSrc, videoName) {
+                // 1. 检查是否存在视频播放容器
+                let videoPlayerContainer = document.getElementById('localVideoPlayer');
+                if (videoPlayerContainer) {
+                    // 如果已有容器，先移除它
+                    videoPlayerContainer.remove();
+                }
+                
+                // 创建新的视频播放容器
+                videoPlayerContainer = document.createElement('div');
+                videoPlayerContainer.id = 'localVideoPlayer';
+                videoPlayerContainer.style.position = 'fixed';
+                videoPlayerContainer.style.top = '0';
+                videoPlayerContainer.style.left = '0';
+                videoPlayerContainer.style.width = '100%';
+                videoPlayerContainer.style.height = '100%';
+                videoPlayerContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+                videoPlayerContainer.style.zIndex = '1000';
+                videoPlayerContainer.style.display = 'none'; // 初始隐藏
+                videoPlayerContainer.style.justifyContent = 'center';
+                videoPlayerContainer.style.alignItems = 'center';
+                
+                // 创建视频元素和关闭按钮
+                const videoWrapper = document.createElement('div');
+                videoWrapper.style.position = 'relative';
+                videoWrapper.style.maxWidth = '90%';
+                videoWrapper.style.maxHeight = '90%';
+                
+                const videoElement = document.createElement('video');
+                videoElement.id = 'localVideoElement';
+                videoElement.controls = true;
+                videoElement.style.width = '100%';
+                videoElement.style.height = 'auto';
+                
+                const closeBtn = document.createElement('button');
+                closeBtn.id = 'closeVideoBtn';
+                closeBtn.textContent = '关闭';
+                closeBtn.style.position = 'absolute';
+                closeBtn.style.top = '-30px';
+                closeBtn.style.right = '0';
+                closeBtn.style.background = 'red';
+                closeBtn.style.color = 'white';
+                closeBtn.style.border = 'none';
+                closeBtn.style.padding = '5px 10px';
+                closeBtn.style.cursor = 'pointer';
+                
+                videoWrapper.appendChild(videoElement);
+                videoWrapper.appendChild(closeBtn);
+                videoPlayerContainer.appendChild(videoWrapper);
+                
+                // 添加关闭按钮事件
+                closeBtn.addEventListener('click', function() {
+                    if (videoPlayerContainer) {
+                        videoPlayerContainer.remove();
+                    }
+                });
+                
+                // 将容器添加到文档中
+                document.body.appendChild(videoPlayerContainer);
+                
+                // 2. 先检查视频源格式
+                if (!videoSrc) {
+                    console.error('视频源为空');
+                    alert('无法播放视频：视频源为空');
+                    videoPlayerContainer.remove();
+                    return;
+                }
+                
+                // 检查是否是无效的video-id格式
+                if (videoSrc.includes('video-id:')) {
+                    alert('视频链接已过期，请重新上传视频文件以播放。\n注意：本地存储的视频在页面刷新后需要重新上传。');
+                    videoPlayerContainer.remove();
+                    return;
+                }
+                
+                // 3. 设置视频源
+                videoElement.src = videoSrc;
+                
+                // 4. 显示播放容器
+                videoPlayerContainer.style.display = 'flex';
+                
+                // 5. 尝试播放视频
+                videoElement.addEventListener('loadedmetadata', function() {
+                    videoElement.play().catch(error => {
+                        console.error('播放视频失败:', error);
+                        
+                        // 判断错误类型
+                        if (error.name === 'AbortError') {
+                            // AbortError通常是因为视频元素被移除
+                            console.error('视频播放被中断，可能是由于视频元素被移除');
+                        } else if (error.name === 'NotSupportedError' || videoSrc.startsWith('blob:')) {
+                            alert('视频链接已过期，请重新上传视频文件。\n注意：页面刷新后，临时视频链接会失效。');
+                        } else {
+                            alert('播放视频失败：' + error.message);
+                        }
+                        
+                        // 移除播放容器
+                        if (videoPlayerContainer && document.body.contains(videoPlayerContainer)) {
+                            videoPlayerContainer.remove();
+                        }
+                    });
+                });
+                
+                // 监听视频加载失败事件
+                videoElement.addEventListener('error', function(e) {
+                    console.error('视频加载错误:', e);
+                    alert('视频文件无法加载，请检查文件格式是否支持。');
+                    
+                    // 移除播放容器
+                    if (videoPlayerContainer && document.body.contains(videoPlayerContainer)) {
+                        videoPlayerContainer.remove();
+                    }
+                });
+            }
+        });
+    </script>
+
+
+    <!-- Coze Web SDK -->
+    <script src="https://lf-cdn-tos.bytescm.com/obj/static/xitu_extension/static/coze_web_sdk/1.0.0/web.js"></script>
+    <script>
+      window.onload = function() {
+        // 初始化Coze Web SDK
+        if (typeof window.CozeWebSDK !== 'undefined') {
+          const webChatClient = window.CozeWebSDK.initWebChatClient({
+            bot_id: "7545799369434677294",
+            token: "pat_d9sL0CG3kkjwOXQedIInbBR6lUwH1HijuKWRecWvA0yl6GGUUSJ04XWXPVClWDVG"
+          });
+        }
+      };
+    </script>
+</body>
+</html>

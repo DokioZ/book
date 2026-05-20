@@ -1,0 +1,82 @@
+﻿
+            const viewDetailsBtns = document.querySelectorAll('.view-details-btn');
+            viewDetailsBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const bookId = this.getAttribute('data-book-id');
+                    const book = currentBooks.find(b => b.id === parseInt(bookId));
+                    if (book) {
+                        alert(`${book.title}\n作者：${book.author}\n分类：${book.category}\n价格：¥${book.price.toFixed(2)}\n评分：${book.rating}分\n\n简介：${book.description}`);
+                    }
+                });
+            });
+        }
+        
+        // 更新分页
+        function updatePagination(currentPage, totalPages) {
+            const pagination = document.querySelector('.pagination');
+            pagination.innerHTML = '';
+            
+            // 上一页按钮
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'page-btn';
+            prevBtn.textContent = '上一页';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.addEventListener('click', () => goToPage(currentPage - 1));
+            pagination.appendChild(prevBtn);
+            
+            // 页码按钮
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                pageBtn.textContent = i;
+                pageBtn.addEventListener('click', () => goToPage(i));
+                pagination.appendChild(pageBtn);
+            }
+            
+            // 下一页按钮
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'page-btn';
+            nextBtn.textContent = '下一页';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.addEventListener('click', () => goToPage(currentPage + 1));
+            pagination.appendChild(nextBtn);
+        }
+        
+        // 跳转到指定页码
+        function goToPage(page) {
+            currentPage = page;
+            // 这里可以添加实际的分页逻辑
+            displayBooks(mockBooks);
+            updatePagination(currentPage, Math.ceil(mockBooks.length / booksPerPage));
+        }
+        
+        // 添加事件监听器
+        function addEventListeners() {
+            // 视图切换按钮
+            const gridViewBtn = document.getElementById('gridView');
+            const listViewBtn = document.getElementById('listView');
+            
+            gridViewBtn.addEventListener('click', function() {
+                gridViewBtn.classList.add('active');
+                listViewBtn.classList.remove('active');
+                // 切换到网格视图
+                document.getElementById('bookGrid').style.display = 'grid';
+            });
+            
+            listViewBtn.addEventListener('click', function() {
+                listViewBtn.classList.add('active');
+                gridViewBtn.classList.remove('active');
+                // 切换到列表视图
+                document.getElementById('bookGrid').style.display = 'block';
+            });
+            
+            // 筛选按钮
+            const filterBtn = document.querySelector('.filter-btn');
+            filterBtn.addEventListener('click', function() {
+                // 这里可以添加实际的筛选逻辑
+                alert('筛选功能将在后续版本实现');
+            });
+        }
+    </script>
+</body>
+</html>

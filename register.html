@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图书智能宣传系统 - 注册</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#10B981',
+                        accent: '#F59E0B',
+                        dark: '#1F2937',
+                        light: '#F3F4F6'
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .bg-gradient-custom {
+                background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .animate-float {
+                animation: float 6s ease-in-out infinite;
+            }
+            @keyframes float {
+                0% { transform: translateY(0px); }
+                50% { transform: translateY(-20px); }
+                100% { transform: translateY(0px); }
+            }
+        }
+    </style>
+</head>
+<body class="font-inter bg-gray-50 min-h-screen flex items-center justify-center">
+    <!-- 注册页面容器 -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-12">
+            <!-- 左侧品牌介绍 -->
+            <div class="w-full lg:w-1/2 text-center lg:text-left">
+                <div class="animate-float">
+                    <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold text-dark mb-4 text-shadow">
+                        图书智能宣传系统
+                    </h1>
+                    <p class="text-gray-600 text-lg mb-8 max-w-lg">
+                        加入我们，通过AI技术为您的图书创作精彩的宣传视频，提升图书曝光度和销量
+                    </p>
+                    <div class="flex flex-wrap gap-4 justify-center lg:justify-start">
+                        <div class="flex items-center gap-2 bg-white p-3 rounded-lg shadow-md">
+                            <i class="fas fa-book text-primary text-xl"></i>
+                            <span class="text-gray-700">图书商店</span>
+                        </div>
+                        <div class="flex items-center gap-2 bg-white p-3 rounded-lg shadow-md">
+                            <i class="fas fa-video text-secondary text-xl"></i>
+                            <span class="text-gray-700">AI视频生成</span>
+                        </div>
+                        <div class="flex items-center gap-2 bg-white p-3 rounded-lg shadow-md">
+                            <i class="fas fa-users text-accent text-xl"></i>
+                            <span class="text-gray-700">图书广场</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧注册表单 -->
+            <div class="w-full lg:w-1/3 max-w-md">
+                <div class="bg-white rounded-xl shadow-xl p-8 transform transition-all hover:shadow-2xl">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl font-bold text-dark mb-2">创建账户</h2>
+                        <p class="text-gray-500">注册成为会员，享受更多专属功能</p>
+                    </div>
+
+                    <!-- 注册表单 -->
+                    <form id="registerForm" class="space-y-6">
+                        <!-- 用户名 -->
+                        <div class="space-y-2">
+                            <label for="username" class="block text-sm font-medium text-gray-700">用户名</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-user text-gray-400"></i>
+                                </div>
+                                <input type="text" id="username" name="username" class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="请设置用户名" required>
+                            </div>
+                            <p id="usernameHint" class="text-xs text-gray-500">用户名长度4-20个字符</p>
+                        </div>
+
+                        <!-- 邮箱 -->
+                        <div class="space-y-2">
+                            <label for="email" class="block text-sm font-medium text-gray-700">邮箱</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-envelope text-gray-400"></i>
+                                </div>
+                                <input type="email" id="email" name="email" class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="请输入邮箱地址" required>
+                            </div>
+                        </div>
+
+                        <!-- 邮箱验证码 -->
+                        <div class="space-y-2">
+                            <label for="verificationCode" class="block text-sm font-medium text-gray-700">验证码</label>
+                            <div class="flex gap-3">
+                                <div class="relative flex-1">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="fas fa-shield-alt text-gray-400"></i>
+                                    </div>
+                                    <input type="text" id="verificationCode" name="verificationCode" class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="请输入验证码" required>
+                                </div>
+                                <button type="button" id="sendVerificationCode" class="px-4 py-3 bg-primary/10 text-primary rounded-lg font-medium hover:bg-primary/20 transition-colors whitespace-nowrap">
+                                    发送验证码
+                                </button>
+                            </div>
+                            <p id="verificationHint" class="text-xs text-gray-500">
+                                <i class="fas fa-info-circle"></i> 验证码将发送到您的邮箱，请查收
+                            </p>
+                        </div>
+
+                        <!-- 密码 -->
+                        <div class="space-y-2">
+                            <label for="password" class="block text-sm font-medium text-gray-700">密码</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-lock text-gray-400"></i>
+                                </div>
+                                <input type="password" id="password" name="password" class="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="请设置密码" required>
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                    <button type="button" id="togglePassword" class="text-gray-400 hover:text-gray-600 transition-colors">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <p id="passwordHint" class="text-xs text-gray-500">密码至少包含8个字符，包括字母和数字</p>
+                        </div>
+
+                        <!-- 确认密码 -->
+                        <div class="space-y-2">
+                            <label for="confirmPassword" class="block text-sm font-medium text-gray-700">确认密码</label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i class="fas fa-lock text-gray-400"></i>
+                                </div>
+                                <input type="password" id="confirmPassword" name="confirmPassword" class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all" placeholder="请再次输入密码" required>
+                            </div>
+                        </div>
+
+                        <!-- 用户协议 -->
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <input id="agreement" name="agreement" type="checkbox" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                            </div>
+                            <div class="ml-3 text-sm">
+                                <label for="agreement" class="text-gray-600">我已阅读并同意 <a href="#" class="text-primary hover:underline">用户协议</a> 和 <a href="#" class="text-primary hover:underline">隐私政策</a></label>
+                            </div>
+                        </div>
+
+                        <!-- 注册按钮 -->
+                        <button type="submit" class="w-full bg-gradient-custom text-white py-3 px-4 rounded-lg font-medium shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                            <span>注册</span>
+                            <i class="fas fa-user-plus"></i>
+                        </button>
+
+
+                    </form>
+
+                    <!-- 登录链接 -->
+                    <div class="text-center mt-6">
+                        <p class="text-gray-600">
+                            已有账户？ <a href="login.html" class="text-primary font-medium hover:underline">立即登录</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 密码显示/隐藏切换
+            const togglePassword = document.getElementById('togglePassword');
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirmPassword');
+
+            togglePassword.addEventListener('click', function() {
+                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                password.setAttribute('type', type);
+                confirmPassword.setAttribute('type', type);
+                this.querySelector('i').classList.toggle('fa-eye');
+                this.querySelector('i').classList.toggle('fa-eye-slash');
+            });
+
+            // 表单验证
+            const form = document.getElementById('registerForm');
+            const username = document.getElementById('username');
+            const email = document.getElementById('email');
+            const agreement = document.getElementById('agreement');
+            const verificationCode = document.getElementById('verificationCode');
+            const sendVerificationCodeBtn = document.getElementById('sendVerificationCode');
+            const verificationHint = document.getElementById('verificationHint');
+            const usernameHint = document.getElementById('usernameHint');
+            const passwordHint = document.getElementById('passwordHint');
+
+            // 用户名验证
+            username.addEventListener('input', function() {
+                if (this.value.length < 4 || this.value.length > 20) {
+                    usernameHint.textContent = '用户名长度应在4-20个字符之间';
+                    usernameHint.classList.add('text-red-500');
+                    username.classList.add('border-red-300');
+                    username.classList.remove('border-green-300');
+                } else {
+                    usernameHint.textContent = '用户名可用';
+                    usernameHint.classList.remove('text-red-500');
+                    usernameHint.classList.add('text-green-500');
+                    username.classList.remove('border-red-300');
+                    username.classList.add('border-green-300');
+                }
+            });
+
+            // 密码验证
+            password.addEventListener('input', function() {
+                const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+                if (!passwordRegex.test(this.value)) {
+                    passwordHint.textContent = '密码至少包含8个字符，包括字母和数字';
+                    passwordHint.classList.add('text-red-500');
+                    password.classList.add('border-red-300');
+                    password.classList.remove('border-green-300');
+                } else {
+                    passwordHint.textContent = '密码强度良好';
+                    passwordHint.classList.remove('text-red-500');
+                    passwordHint.classList.add('text-green-500');
+                    password.classList.remove('border-red-300');
+                    password.classList.add('border-green-300');
+                }
+            });
+
+            // 发送验证码
+            sendVerificationCodeBtn.addEventListener('click', async () => {
+                const emailValue = email.value.trim();
+                
+                // 验证邮箱格式
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(emailValue)) {
+                    showToast('请输入有效的邮箱地址', 'error');
+                    return;
+                }
+                
+                // 禁用按钮并开始倒计时
+                let countdown = 60;
+                sendVerificationCodeBtn.disabled = true;
+                sendVerificationCodeBtn.textContent = `重新发送(${countdown}s)`;
+                
+                try {
+                    // 发送验证码请求
+                const response = await fetch('/api/send-verification-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email: emailValue })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showToast(data.message || '验证码发送成功，请查收邮箱', 'success');
+                    verificationHint.textContent = '验证码已发送，请注意查收邮箱（可能在垃圾邮件中）';
+                    verificationHint.className = 'text-xs text-green-500';
+                } else {
+                    showToast(data.message || '验证码发送失败，请重试', 'error');
+                    verificationHint.textContent = '';
+                }
+                } catch (error) {
+                    console.error('发送验证码失败:', error);
+                    showToast('网络错误，请稍后重试', 'error');
+                    verificationHint.textContent = '';
+                }
+                
+                // 倒计时逻辑
+                const timer = setInterval(() => {
+                    countdown--;
+                    sendVerificationCodeBtn.textContent = `重新发送(${countdown}s)`;
+                    
+                    if (countdown <= 0) {
+                        clearInterval(timer);
+                        sendVerificationCodeBtn.disabled = false;
+                        sendVerificationCodeBtn.textContent = '发送验证码';
+                    }
+                }, 1000);
+            });
+            
+            // 表单提交处理
+            const registerForm = document.getElementById('registerForm');
+            registerForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // 表单验证
+                if (username.value.length < 4 || username.value.length > 20) {
+                    showToast('用户名长度应在4-20个字符之间', 'error');
+                    return;
+                }
+                
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(email.value)) {
+                    showToast('请输入有效的邮箱地址', 'error');
+                    return;
+                }
+                
+                // 验证验证码是否填写
+                if (!verificationCode.value.trim()) {
+                    showToast('请输入验证码', 'error');
+                    return;
+                }
+                
+                const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+                if (!passwordRegex.test(password.value)) {
+                    showToast('密码至少包含8个字符，包括字母和数字', 'error');
+                    return;
+                }
+                
+                if (password.value !== confirmPassword.value) {
+                    showToast('两次输入的密码不一致', 'error');
+                    return;
+                }
+                
+                if (!agreement.checked) {
+                    showToast('请阅读并同意用户协议和隐私政策', 'error');
+                    return;
+                }
+                
+                // 获取表单数据
+                const registerData = {
+                    username: username.value,
+                    email: email.value,
+                    password: password.value,
+                    verificationCode: verificationCode.value
+                };
+                
+                console.log('注册数据:', registerData);
+                
+                // 发送注册请求到后端API
+                fetch('http://localhost:3001/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(registerData)
+                })
+                .then(response => {
+                    // 无论响应状态如何，都尝试解析JSON
+                    return response.json().then(data => {
+                        if (!response.ok) {
+                            // 如果状态码不是200-299，抛出包含详细错误信息的错误
+                            throw {
+                                status: response.status,
+                                message: data.message || '注册请求失败'
+                            };
+                        }
+                        return data;
+                    });
+                })
+                .then(data => {
+                    if (data.success) {
+                        showToast('注册成功，请登录', 'success');
+                        
+                        // 跳转到登录页面
+                        setTimeout(() => {
+                            window.location.href = 'login.html';
+                        }, 1500);
+                    } else {
+                        showToast(data.message || '注册失败', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('注册错误:', error);
+                    // 显示具体的错误信息
+                    showToast(error.message || '注册失败，请稍后再试', 'error');
+                });
+            });
+
+            // 显示提示信息
+            function showToast(message, type = 'info') {
+                // 创建提示元素
+                const toast = document.createElement('div');
+                toast.className = `fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 ease-in-out translate-y-[-20px] opacity-0`;
+                
+                // 设置不同类型的样式
+                if (type === 'success') {
+                    toast.classList.add('bg-green-500', 'text-white');
+                    toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
+                } else if (type === 'error') {
+                    toast.classList.add('bg-red-500', 'text-white');
+                    toast.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i>${message}`;
+                } else {
+                    toast.classList.add('bg-blue-500', 'text-white');
+                    toast.innerHTML = `<i class="fas fa-info-circle mr-2"></i>${message}`;
+                }
+                
+                // 添加到页面
+                document.body.appendChild(toast);
+                
+                // 显示动画
+                setTimeout(() => {
+                    toast.classList.remove('translate-y-[-20px]', 'opacity-0');
+                }, 10);
+                
+                // 自动关闭
+                setTimeout(() => {
+                    toast.classList.add('translate-y-[-20px]', 'opacity-0');
+                    setTimeout(() => {
+                        document.body.removeChild(toast);
+                    }, 300);
+                }, 3000);
+            }
+        });
+    </script>
+  <script src="fix-countdown.js"></script>
+
+    <!-- Coze Web SDK -->
+    <script src="https://lf-cdn.coze.cn/obj/unpkg/flow-platform/chat-app-sdk/1.2.0-beta.10/libs/cn/index.js"></script>
+    <script>
+      new CozeWebSDK.WebChatClient({
+        config: {
+          bot_id: '7545799369434677294',
+        },
+        componentProps: {
+          title: 'Coze',
+        },
+        auth: {
+          type: 'token',
+          token: 'pat_d9sL0CG3kkjwOXQedIInbBR6lUwH1HijuKWRecWvA0yl6GGUUSJ04XWXPVClWDVG',
+          onRefreshToken: function () {
+            return 'pat_d9sL0CG3kkjwOXQedIInbBR6lUwH1HijuKWRecWvA0yl6GGUUSJ04XWXPVClWDVG'
+          }
+        }
+      });
+    </script>
+</body>
+</html>

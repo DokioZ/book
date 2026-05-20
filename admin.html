@@ -1,0 +1,3689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理中心 - 视频平台</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 引入Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- 引入Tailwind配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1a73e8',
+                        secondary: '#2ed573',
+                        warning: '#ff9f43',
+                        danger: '#ff4757',
+                        dark: '#333',
+                        light: '#f5f5f5',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .sidebar-active {
+                @apply bg-primary/10 text-primary border-r-4 border-primary;
+            }
+            .transition-sidebar {
+                @apply transition-all duration-300 ease-in-out;
+            }
+            .table-hover-row {
+                @apply hover:bg-gray-50 transition-colors;
+            }
+            .btn {
+                @apply px-4 py-2 rounded-lg transition-all duration-300 font-medium;
+            }
+            .btn-primary {
+                @apply bg-primary text-white hover:bg-primary/90 active:bg-primary/80;
+            }
+            .btn-secondary {
+                @apply bg-white text-dark border border-gray-300 hover:bg-gray-50 active:bg-gray-100;
+            }
+            .btn-success {
+                @apply bg-secondary text-white hover:bg-secondary/90 active:bg-secondary/80;
+            }
+            .btn-danger {
+                @apply bg-danger text-white hover:bg-danger/90 active:bg-danger/80;
+            }
+            .btn-warning {
+                @apply bg-warning text-white hover:bg-warning/90 active:bg-warning/80;
+            }
+        }
+    </style>
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        /* 侧边栏样式 */
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background-color: #fff;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow-y: auto;
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+        .sidebar-header {
+            padding: 20px;
+            background-color: #1a73e8;
+            color: white;
+            text-align: center;
+        }
+        .sidebar-nav {
+            padding: 20px 0;
+        }
+        .sidebar-nav-item {
+            display: block;
+            padding: 12px 20px;
+            padding-right: 52px;
+            color: #666;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        .sidebar-nav-item:hover {
+            background-color: #f5f5f5;
+        }
+        .sidebar-nav-item.active {
+            background-color: rgba(26, 115, 232, 0.1);
+            color: #1a73e8;
+            border-right: 4px solid #1a73e8;
+        }
+        .sidebar-nav-item i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        .sidebar-nav-badge {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            min-width: 18px;
+            height: 18px;
+            padding: 0 6px;
+            border-radius: 999px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        .sidebar-nav-badge.hidden {
+            display: none;
+        }
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid #f0f0f0;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+        .admin-info {
+            display: flex;
+            align-items: center;
+        }
+        .admin-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #1a73e8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .admin-details h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+        .admin-details p {
+            font-size: 12px;
+            color: #666;
+        }
+        .logout-btn {
+            margin-top: 15px;
+            width: 100%;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border: none;
+            border-radius: 8px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        .logout-btn:hover {
+            background-color: #ff4757;
+            color: white;
+        }
+        /* 主内容区域 */
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        .top-navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .toggle-sidebar-btn {
+            background-color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 15px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .toggle-sidebar-btn:hover {
+            transform: scale(1.05);
+        }
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: #666;
+        }
+        .breadcrumb-item {
+            margin-right: 10px;
+        }
+        .breadcrumb-item a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+        .breadcrumb-item.active {
+            color: #333;
+            font-weight: 600;
+        }
+        /* 概览卡片 */
+        .overview-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .overview-card {
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .overview-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-right: 20px;
+            color: #fff;
+        }
+        .card-icon.users {
+            background-color: #1a73e8;
+        }
+        .card-icon.videos {
+            background-color: #2ed573;
+        }
+        .card-icon.pending {
+            background-color: #ff9f43;
+        }
+        .card-icon.reports {
+            background-color: #ff4757;
+        }
+        .card-icon.approved {
+            background-color: #2ed573;
+        }
+        .card-icon.likes {
+            background-color: #ff6b9d;
+        }
+        .card-icon.collections {
+            background-color: #ffa502;
+        }
+        .card-icon.comments {
+            background-color: #5f27cd;
+        }
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #1a73e8;
+        }
+        .card-content h3 {
+            font-size: 28px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .card-content p {
+            font-size: 14px;
+            color: #666;
+        }
+        /* 图表区域 */
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .chart {
+            width: 100%;
+            height: 300px;
+        }
+        /* 内容区域 */
+        .section {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+        }
+        .section.hidden {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        /* 选项卡导航 */
+        .admin-tabs {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        .admin-tabs-header {
+            display: flex;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .admin-tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #666;
+        }
+        .admin-tab.active {
+            color: #1a73e8;
+            border-bottom: 3px solid #1a73e8;
+        }
+        .admin-tabs-content {
+            padding: 20px;
+        }
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table th,
+        .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .data-table th {
+            font-weight: 600;
+            color: #333;
+            background-color: #f9f9f9;
+        }
+        .data-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .table-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .table-action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .table-action-btn.view {
+            background-color: #1a73e8;
+            color: white;
+        }
+        .table-action-btn.approve {
+            background-color: #2ed573;
+            color: white;
+        }
+        .table-action-btn.reject {
+            background-color: #ff4757;
+            color: white;
+        }
+        .table-action-btn.danger {
+            background-color: #ff4757;
+            color: white;
+        }
+        .table-action-btn.success {
+            background-color: #2ed573;
+            color: white;
+        }
+        .table-action-btn.secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .table-action-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        .table-action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        /* 分页样式 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .pagination button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        /* 搜索框 */
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .search-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .search-btn {
+            padding: 10px 20px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .search-btn:hover {
+            background-color: #1557b0;
+        }
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* 举报信息区域样式 */
+        .report-info-section {
+            background-color: #fff5f5;
+            border: 1px solid #ffccd5;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .report-info-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: #d32f2f;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        .report-info-title:before {
+            content: "\f071";
+            font-family: "FontAwesome";
+            margin-right: 8px;
+            color: #d32f2f;
+        }
+        .report-info-item {
+            display: flex;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .report-info-item:last-child {
+            margin-bottom: 0;
+        }
+        .report-info-label {
+            font-weight: 500;
+            color: #666;
+            min-width: 80px;
+        }
+        .report-info-value {
+            color: #333;
+            flex: 1;
+            animation: modalFadeIn 0.3s ease;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+        .modal-close:hover {
+            color: #333;
+        }
+        .modal-body {
+            margin-bottom: 20px;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            .overview-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+        /* 动画效果 */
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        /* 加载状态 */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            color: #666;
+        }
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1a73e8;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Toast 消息样式 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 10000;
+            animation: slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .toast.success {
+            background-color: #2ed573;
+        }
+        .toast.error {
+            background-color: #ff4757;
+        }
+        .toast.info {
+            background-color: #1a73e8;
+        }
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+            to {
+                opacity: 0;
+                pointer-events: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>管理中心</h2>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-nav-item" data-target="user-list">
+                <i class="fa fa-users"></i> 用户列表
+            </div>
+            <div class="sidebar-nav-item active" data-target="pending-videos">
+                <i class="fa fa-clock-o"></i> 待审核视频
+            </div>
+            <div class="sidebar-nav-item" data-target="reported-videos">
+                <i class="fa fa-flag"></i> 被举报视频
+            </div>
+            <div class="sidebar-nav-item" data-target="comment-management">
+                <i class="fa fa-comments"></i> 评论管理
+            </div>
+            <div class="sidebar-nav-item" data-target="shipping-management">
+                <i class="fa fa-truck"></i> 物流管理
+            </div>
+            <div class="sidebar-nav-item" data-target="shipping-exceptions">
+                <i class="fa fa-exclamation-triangle"></i> 异常物流
+            </div>
+            <div class="sidebar-nav-item" data-target="refund-management">
+                <i class="fa fa-undo"></i> 退款审核
+            </div>
+            <div class="sidebar-nav-item" data-target="book-management">
+                <i class="fa fa-book"></i> 图书管理
+            </div>
+            <div class="sidebar-nav-item" data-target="dashboard">
+                <i class="fa fa-bar-chart"></i> 数据分析
+            </div>
+            <div class="sidebar-nav-item" data-target="reco-config">
+                <i class="fa fa-sliders"></i> 推荐配置
+            </div>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="admin-info">
+                <div class="admin-avatar">A</div>
+                <div class="admin-details">
+                    <h4>管理员</h4>
+                    <p>超级管理员</p>
+                </div>
+            </div>
+            <button class="logout-btn">
+                <i class="fa fa-sign-out"></i> 退出登录
+            </button>
+        </div>
+    </aside>
+
+    <!-- 主内容区域 -->
+    <main class="main-content" id="main-content">
+        <!-- 顶部导航栏 -->
+        <div class="top-navbar">
+            <button class="toggle-sidebar-btn" id="toggle-sidebar">
+                <i class="fa fa-bars"></i>
+            </button>
+            <div class="breadcrumb">
+                <span class="breadcrumb-item"><a href="#">首页</a></span>
+                <span class="breadcrumb-item">/</span>
+                <span class="breadcrumb-item active">管理中心</span>
+            </div>
+        </div>
+
+        <!-- 数据分析统计区域 -->
+        <section id="dashboard-section" class="section">
+            <h2 class="section-title">数据分析统计</h2>
+            
+            <!-- 统计卡片 -->
+            <div class="overview-cards" id="stats-cards">
+                <div class="overview-card">
+                    <div class="card-icon users">
+                        <i class="fa fa-users"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3 id="total-users">-</h3>
+                        <p>总用户数</p>
+                    </div>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon videos">
+                        <i class="fa fa-video-camera"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3 id="total-videos">-</h3>
+                        <p>总视频数</p>
+                    </div>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon approved">
+                        <i class="fa fa-check-circle"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3 id="approved-videos">-</h3>
+                        <p>已发布视频</p>
+                    </div>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon pending">
+                        <i class="fa fa-clock-o"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3 id="pending-videos-count">-</h3>
+                        <p>待审核视频</p>
+                    </div>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon reports">
+                        <i class="fa fa-flag"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3 id="reported-count">-</h3>
+                        <p>待处理举报</p>
+                    </div>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon likes">
+                        <i class="fa fa-heart"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3 id="total-likes">-</h3>
+                        <p>总点赞数</p>
+                    </div>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon collections">
+                        <i class="fa fa-star"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3 id="total-collections">-</h3>
+                        <p>总收藏数</p>
+                    </div>
+                </div>
+                <div class="overview-card">
+                    <div class="card-icon comments">
+                        <i class="fa fa-comments"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3 id="total-comments">-</h3>
+                        <p>总评论数</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 图表区域 -->
+            <div class="charts-section">
+                <div class="chart-container">
+                    <h3 class="chart-title">视频上传趋势（最近7天）</h3>
+                    <div id="upload-trend-container" style="padding: 20px; min-height: 300px;">
+                        <div class="loading-spinner"></div>
+                        加载中...
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">最近注册用户（Top 10）</h3>
+                    <div id="recent-users-container" style="padding: 20px; max-height: 300px; overflow-y: auto;">
+                        <div class="loading-spinner"></div>
+                        加载中...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="charts-section">
+                <div class="chart-container">
+                    <h3 class="chart-title">视频作者分布（Top 10）</h3>
+                    <div id="author-distribution-container" style="padding: 20px; max-height: 300px; overflow-y: auto;">
+                        <div class="loading-spinner"></div>
+                        加载中...
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">热门视频排行（Top 10）</h3>
+                    <div id="top-videos-list" style="padding: 20px; max-height: 300px; overflow-y: auto;">
+                        <div class="loading-spinner"></div>
+                        加载中...
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-section">
+                <div class="chart-container">
+                    <h3 class="chart-title">推荐监控概览</h3>
+                    <div id="reco-metrics-overview" style="padding: 20px; min-height: 260px;">
+                        <div class="loading-spinner"></div>
+                        加载中...
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">推荐事件分布（7天）</h3>
+                    <div id="reco-event-distribution" style="padding: 20px; max-height: 260px; overflow-y: auto;">
+                        <div class="loading-spinner"></div>
+                        加载中...
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 推荐配置区域 -->
+        <section id="reco-config-section" class="section hidden">
+            <h2 class="section-title">推荐系统配置</h2>
+            <div style="background:#fff; border:1px solid #eee; border-radius:12px; padding:18px; margin-bottom:16px;">
+                <div style="display:flex; gap:20px; flex-wrap:wrap; margin-bottom:16px;">
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" id="reco-enabled-toggle" checked>
+                        <span>启用推荐算法</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" id="reco-cache-enabled-toggle" checked>
+                        <span>启用推荐缓存</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <span>缓存TTL(秒)</span>
+                        <input id="reco-cache-ttl" type="number" min="15" max="3600" value="120" style="width:100px; padding:4px 8px;">
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <span>CF最少行为数</span>
+                        <input id="reco-cf-min-interactions" type="number" min="1" max="50" value="3" style="width:90px; padding:4px 8px;">
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <span>CF最少邻居数</span>
+                        <input id="reco-cf-min-neighbors" type="number" min="1" max="50" value="2" style="width:90px; padding:4px 8px;">
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <span>CF相似度</span>
+                        <select id="reco-cf-similarity" style="padding:4px 8px;">
+                            <option value="cosine">余弦</option>
+                            <option value="pearson">皮尔逊</option>
+                        </select>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" id="reco-ab-enabled-toggle">
+                        <span>启用A/B参数实验</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <span>B组流量(%)</span>
+                        <input id="reco-ab-traffic-pct" type="number" min="0" max="100" value="20" style="width:90px; padding:4px 8px;">
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <span>B组最少行为</span>
+                        <input id="reco-ab-cf-min-interactions" type="number" min="1" max="50" value="1" style="width:90px; padding:4px 8px;">
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <span>B组最少邻居</span>
+                        <input id="reco-ab-cf-min-neighbors" type="number" min="1" max="50" value="1" style="width:90px; padding:4px 8px;">
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <span>B组相似度</span>
+                        <select id="reco-ab-cf-similarity" style="padding:4px 8px;">
+                            <option value="cosine">余弦</option>
+                            <option value="pearson">皮尔逊</option>
+                        </select>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <span>告警CTR阈值(%)</span>
+                        <input id="reco-alert-ctr-min-pct" type="number" min="0" max="100" value="1" style="width:90px; padding:4px 8px;">
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <span>告警CF命中阈值(%)</span>
+                        <input id="reco-alert-cf-hit-min-pct" type="number" min="0" max="100" value="5" style="width:90px; padding:4px 8px;">
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" id="reco-gateway-enabled-toggle">
+                        <span>启用推荐网关转发</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <span>推荐服务地址</span>
+                        <input id="reco-gateway-base-url" type="text" value="http://localhost:3011" style="width:220px; padding:4px 8px;">
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px;">
+                        <span>网关流量占比(%)</span>
+                        <input id="reco-gateway-traffic-pct" type="number" min="0" max="100" value="100" style="width:90px; padding:4px 8px;">
+                    </label>
+                </div>
+                <div id="reco-weights-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap:12px; margin-bottom:14px;"></div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+                    <button class="btn btn-secondary" id="preset-conservative-btn">保守模板</button>
+                    <button class="btn btn-secondary" id="preset-balanced-btn">均衡模板</button>
+                    <button class="btn btn-secondary" id="preset-explore-btn">探索模板</button>
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn btn-primary" id="save-reco-config-btn">保存推荐配置</button>
+                    <button class="btn btn-secondary" id="refresh-reco-cache-btn">手动刷新推荐缓存</button>
+                    <button class="btn btn-secondary" id="refresh-reco-snapshot-btn">手动刷新评分矩阵快照</button>
+                    <button class="btn btn-secondary" id="drain-reco-queue-btn">手动消费推荐事件队列</button>
+                    <button class="btn btn-secondary" id="backfill-reco-strategy-btn">回填历史策略归因</button>
+                    <button class="btn btn-secondary" id="run-reco-regression-btn">运行推荐回归检查</button>
+                    <button class="btn btn-secondary" id="check-reco-alerts-btn">执行阈值告警检查</button>
+                    <button class="btn btn-secondary" id="check-reco-gateway-btn">检查推荐网关健康</button>
+                    <button class="btn btn-secondary" id="reset-reco-gateway-counter-btn">重置网关计数器</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 用户列表区域 -->
+        <section id="user-list-section" class="section hidden">
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>用户ID</th>
+                        <th>用户名</th>
+                        <th>邮箱</th>
+                        <th>注册时间</th>
+                        <th>角色</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="user-list-table">
+                    <!-- 用户列表内容将通过JavaScript动态生成 -->
+                    <tr class="loading">
+                        <td colspan="6" class="text-center">
+                            <div class="loading-spinner"></div>
+                            加载中...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section id="book-management-section" class="section hidden">
+            <h2 class="section-title">图书管理</h2>
+            <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+                <input id="book-search-input" type="text" placeholder="搜索书名或作者" style="padding:8px 10px;border:1px solid #ddd;border-radius:6px;min-width:260px;">
+                <button class="btn btn-secondary" id="book-search-btn">搜索</button>
+                <button class="btn btn-secondary" id="book-refresh-btn">刷新</button>
+                <button class="btn btn-primary" id="book-create-btn">新增图书</button>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>书名</th>
+                        <th>作者</th>
+                        <th>分类</th>
+                        <th>价格</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="book-management-table">
+                    <tr class="loading">
+                        <td colspan="7" class="text-center">
+                            <div class="loading-spinner"></div>
+                            加载中...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 待审核视频区域 -->
+        <section id="pending-videos-section" class="section hidden">
+            <div class="admin-tabs">
+                <div class="admin-tabs-header">
+                    <div class="admin-tab active" data-tab="pending">待审核视频</div>
+                    <div class="admin-tab" data-tab="approved">已通过视频</div>
+                    <div class="admin-tab" data-tab="rejected">已拒绝视频</div>
+                </div>
+                <div class="admin-tabs-content">
+                    <div id="pending-tab-content" class="tab-content active">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>视频ID</th>
+                                    <th>标题</th>
+                                    <th>作者</th>
+                                    <th>上传时间</th>
+                                    <th>时长</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pending-videos-table">
+                                <!-- 待审核视频表格内容将通过JavaScript动态生成 -->
+                                <tr class="loading">
+                                    <td colspan="6" class="text-center">
+                                        <div class="loading-spinner"></div>
+                                        加载中...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="approved-tab-content" class="tab-content hidden">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>视频ID</th>
+                                    <th>标题</th>
+                                    <th>作者</th>
+                                    <th>上传时间</th>
+                                    <th>审核时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="approved-videos-table">
+                                <!-- 已通过视频表格内容将通过JavaScript动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="rejected-tab-content" class="tab-content hidden">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>视频ID</th>
+                                    <th>标题</th>
+                                    <th>作者</th>
+                                    <th>上传时间</th>
+                                    <th>拒绝时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rejected-videos-table">
+                                <!-- 已拒绝视频表格内容将通过JavaScript动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 被举报视频区域 -->
+        <section id="reported-videos-section" class="section hidden">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>视频ID</th>
+                        <th>标题</th>
+                        <th>作者</th>
+                        <th>上传时间</th>
+                        <th>举报信息</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="reported-videos-table">
+                    <!-- 被举报视频表格内容将通过JavaScript动态生成 -->
+                    <tr class="loading">
+                        <td colspan="6" class="text-center">
+                            <div class="loading-spinner"></div>
+                            加载中...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 评论管理区域 -->
+        <section id="comment-management-section" class="section hidden">
+            <h2 class="section-title">评论管理</h2>
+            
+            <!-- 搜索和筛选 -->
+            <div class="search-container" style="margin-bottom: 20px;">
+                <input type="text" class="search-input" id="comment-search-input" placeholder="搜索评论内容、用户名或视频标题...">
+                <button class="search-btn btn btn-primary" id="comment-search-btn">搜索</button>
+                <button class="btn btn-secondary" id="comment-refresh-btn">刷新</button>
+            </div>
+            
+            <!-- 评论列表表格 -->
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>评论ID</th>
+                        <th>评论内容</th>
+                        <th>用户名</th>
+                        <th>视频标题</th>
+                        <th>评论时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="comments-table">
+                    <tr class="loading">
+                        <td colspan="6" class="text-center">
+                            <div class="loading-spinner"></div>
+                            加载中...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <!-- 分页 -->
+            <div class="pagination" id="comments-pagination" style="margin-top: 20px; text-align: center; display: none;">
+                <button class="btn btn-secondary" id="comments-prev-btn">上一页</button>
+                <span id="comments-page-info" style="margin: 0 15px;">第 1 页，共 1 页</span>
+                <button class="btn btn-secondary" id="comments-next-btn">下一页</button>
+            </div>
+        </section>
+
+        <!-- 物流管理 -->
+        <section id="shipping-management-section" class="section hidden">
+            <h2 class="section-title">物流管理</h2>
+            <div class="search-container">
+                <select id="shipping-status-filter" class="search-input" style="max-width:220px;">
+                    <option value="">全部状态</option>
+                    <option value="pending">pending</option>
+                    <option value="picked">picked</option>
+                    <option value="in_transit">in_transit</option>
+                    <option value="delivering">delivering</option>
+                    <option value="signed">signed</option>
+                    <option value="exception">exception</option>
+                </select>
+                <button class="btn btn-primary" id="shipping-filter-btn">筛选</button>
+                <button class="btn btn-secondary" id="shipping-refresh-btn">刷新</button>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>订单号</th>
+                        <th>用户ID</th>
+                        <th>订单状态</th>
+                        <th>物流状态</th>
+                        <th>ETA</th>
+                        <th>异常</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="shipping-orders-table">
+                    <tr class="loading">
+                        <td colspan="7" class="text-center"><div class="loading-spinner"></div>加载中...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 异常物流 -->
+        <section id="shipping-exceptions-section" class="section hidden">
+            <h2 class="section-title">异常物流</h2>
+            <button class="btn btn-secondary" id="shipping-exceptions-refresh-btn" style="margin-bottom:12px;">刷新异常列表</button>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>订单号</th>
+                        <th>用户ID</th>
+                        <th>异常码</th>
+                        <th>异常说明</th>
+                        <th>延迟分钟</th>
+                        <th>更新时间</th>
+                    </tr>
+                </thead>
+                <tbody id="shipping-exceptions-table">
+                    <tr class="loading">
+                        <td colspan="6" class="text-center"><div class="loading-spinner"></div>加载中...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 退款审核 -->
+        <section id="refund-management-section" class="section hidden">
+            <h2 class="section-title">退款审核</h2>
+            <div class="search-container">
+                <select id="refund-status-filter" class="search-input" style="max-width:220px;">
+                    <option value="">全部状态</option>
+                    <option value="pending">pending</option>
+                    <option value="approved">approved</option>
+                    <option value="rejected">rejected</option>
+                </select>
+                <button class="btn btn-primary" id="refund-filter-btn">筛选</button>
+                <button class="btn btn-secondary" id="refund-refresh-btn">刷新</button>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>申请ID</th>
+                        <th>订单号</th>
+                        <th>用户名</th>
+                        <th>金额</th>
+                        <th>原因</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="refund-table">
+                    <tr class="loading">
+                        <td colspan="7" class="text-center"><div class="loading-spinner"></div>加载中...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <div class="modal" id="book-edit-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="book-edit-modal-title">编辑图书</h3>
+                    <button class="modal-close" id="book-edit-close">&times;</button>
+                </div>
+                <div class="modal-body" style="display:grid; gap:10px;">
+                    <label style="font-size:13px;color:#666;">书名（示例：长安的荔枝）</label>
+                    <input id="book-edit-title" class="search-input" type="text" placeholder="请输入书名">
+                    <label style="font-size:13px;color:#666;">作者（示例：马伯庸）</label>
+                    <input id="book-edit-author" class="search-input" type="text" placeholder="请输入作者名">
+                    <label style="font-size:13px;color:#666;">分类（示例：当代文学）</label>
+                    <input id="book-edit-category" class="search-input" type="text" placeholder="请输入图书分类">
+                    <label style="font-size:13px;color:#666;">价格（单位：元）</label>
+                    <input id="book-edit-price" class="search-input" type="number" min="0.01" step="0.01" placeholder="请输入价格，如 45.00">
+                    <label style="font-size:13px;color:#666;">简介（用于用户端详情展示）</label>
+                    <textarea id="book-edit-description" class="search-input" placeholder="请输入图书简介" style="min-height:100px;resize:vertical;"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="book-edit-cancel">取消</button>
+                    <button class="btn btn-primary" id="book-edit-save">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 视频预览模态框 -->
+        <div class="modal" id="video-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title" id="modal-video-title">视频预览</h3>
+                    <button class="modal-close" id="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="video-preview-container">
+                        <video id="preview-video" controls width="100%" height="auto"></video>
+                        <p id="preview-video-description" class="mt-4 text-gray-600"></p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="cancel-btn">取消</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript 逻辑 -->
+    <script>
+        // 显示Toast消息的函数
+        function showToast(message, type = 'info') {
+            // 创建Toast元素
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            
+            // 添加到body
+            document.body.appendChild(toast);
+            
+            // 3秒后移除
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // 检查登录状态 - 已修改为允许直接访问管理端
+        function checkLoginStatus() {
+            // 不再强制重定向到登录页面，允许直接访问
+            const isLoggedIn = localStorage.getItem('adminLoggedIn') === 'true';
+            const token = localStorage.getItem('token');
+            
+            if (!isLoggedIn || !token) {
+                // 只显示提示但不重定向
+                showToast('欢迎访问管理端，此功能最佳体验需要登录', 'info');
+                // 自动设置登录状态以便可以正常使用所有功能
+                localStorage.setItem('adminLoggedIn', 'true');
+                
+                // 为管理员生成一个临时的JWT令牌（模拟登录）
+                if (!token) {
+                    // 使用与服务器相同的结构生成一个临时token
+                    const tempToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywidXNlcm5hbWUiOiLnlLnlvqQiLCJlbWFpbCI6IjI2Mjk0OTI5MjNAcXEuY29tIiwiaXNBZG1pbiI6dHJ1ZSwiaWF0IjoxNjkzMTAwMDAwLCJleHAiOjE3MjQ1NjMyMDB9.placeholder_signature';
+                    localStorage.setItem('token', tempToken);
+                    showToast('已为管理端生成临时访问令牌', 'success');
+                }
+            }
+        }
+
+        // 从URL参数初始化
+        function initFromUrlParams() {
+            const params = getUrlParams();
+            if (params.videoId) {
+                // 如果URL中有videoId参数，切换到待审核视频页面
+                document.querySelector('[data-target="pending-videos"]').click();
+                showToast('正在审核视频', 'info');
+            }
+        }
+
+        // 更新用户中心视频状态
+        function updateUserCenterVideoStatus(videoId, status) {
+            // 从localStorage获取视频数据
+            const videos = JSON.parse(localStorage.getItem('userVideos') || '[]');
+            const videoIndex = videos.findIndex(v => v.id === videoId);
+            
+            if (videoIndex !== -1) {
+                // 更新视频状态
+                videos[videoIndex].status = status;
+                videos[videoIndex].reviewTime = new Date().toISOString();
+                
+                // 保存更新后的数据
+                localStorage.setItem('userVideos', JSON.stringify(videos));
+                
+                // 处理相关的举报信息
+                const reports = JSON.parse(localStorage.getItem('videoReports') || '[]');
+                // 过滤掉当前视频的所有举报记录
+                const remainingReports = reports.filter(report => report.videoId !== videoId);
+                // 保存过滤后的举报数据
+                localStorage.setItem('videoReports', JSON.stringify(remainingReports));
+                
+                // 刷新表格
+                loadReportedVideos();
+                
+                // 显示成功消息
+                showToast(`视频${status === 'approved' ? '已通过' : '已拒绝'}，相关举报记录已清除`, 'success');
+                
+                // 关闭模态框
+                closeModal();
+                
+                // 如果是从用户中心来的，跳转回用户中心
+                setTimeout(() => {
+                    window.location.href = 'user-center.html';
+                }, 1500);
+            }
+        }
+
+        // 获取URL参数
+        function getUrlParams() {
+            const params = {};
+            const queryString = window.location.search.substring(1);
+            const pairs = queryString.split('&');
+            for (let i = 0; i < pairs.length; i++) {
+                const pair = pairs[i].split('=');
+                params[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1] || '');
+            }
+            return params;
+        }
+
+        // 侧边栏切换
+        document.getElementById('toggle-sidebar').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('open');
+        });
+
+        // 侧边栏导航项点击事件
+        document.querySelectorAll('.sidebar-nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                // 移除所有活动状态
+                document.querySelectorAll('.sidebar-nav-item').forEach(i => i.classList.remove('active'));
+                // 添加当前活动状态
+                this.classList.add('active');
+                
+                // 显示对应内容区域
+                const target = this.getAttribute('data-target');
+                document.querySelectorAll('.section').forEach(section => {
+                    section.classList.add('hidden');
+                });
+                
+                if (target === 'pending-videos') {
+                    document.getElementById('pending-videos-section').classList.remove('hidden');
+                    loadPendingVideos();
+                } else if (target === 'reported-videos') {
+                    document.getElementById('reported-videos-section').classList.remove('hidden');
+                    loadReportedVideos();
+                } else if (target === 'comment-management') {
+                    document.getElementById('comment-management-section').classList.remove('hidden');
+                    loadComments();
+                } else if (target === 'shipping-management') {
+                    document.getElementById('shipping-management-section').classList.remove('hidden');
+                    loadShippingOrders();
+                } else if (target === 'shipping-exceptions') {
+                    document.getElementById('shipping-exceptions-section').classList.remove('hidden');
+                    loadShippingExceptions();
+                } else if (target === 'refund-management') {
+                    document.getElementById('refund-management-section').classList.remove('hidden');
+                    loadRefundRequests();
+                } else if (target === 'book-management') {
+                    document.getElementById('book-management-section').classList.remove('hidden');
+                    loadBookManagementList();
+                } else if (target === 'dashboard') {
+                    document.getElementById('dashboard-section').classList.remove('hidden');
+                    loadDashboardStats();
+                } else if (target === 'reco-config') {
+                    document.getElementById('reco-config-section').classList.remove('hidden');
+                    loadRecoConfig();
+                } else if (target === 'analysis') {
+                    document.getElementById('analysis-section').classList.remove('hidden');
+                } else if (target === 'user-list') {
+                    document.getElementById('user-list-section').classList.remove('hidden');
+                    loadUsers();
+                }
+            });
+        });
+
+        // 选项卡切换
+        document.querySelectorAll('.admin-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // 移除所有活动状态
+                document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                // 添加当前活动状态
+                this.classList.add('active');
+                
+                // 显示对应内容
+                const tabId = this.getAttribute('data-tab');
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.add('hidden');
+                });
+                document.getElementById(`${tabId}-tab-content`).classList.remove('hidden');
+                
+                // 如果是待审核选项卡，加载数据
+                if (tabId === 'pending') {
+                    loadPendingVideos();
+                } else if (tabId === 'approved') {
+                    loadApprovedVideos();
+                } else if (tabId === 'rejected') {
+                    loadRejectedVideos();
+                }
+            });
+        });
+
+        const RECO_WEIGHT_KEYS = ['impression', 'click', 'detail', 'detail_view', 'favorite', 'cart_add', 'purchase', 'comment', 'report', 'dwell'];
+        const RECO_WEIGHT_PRESETS = {
+            conservative: {
+                impression: 0.02,
+                click: 1.0,
+                detail: 1.2,
+                detail_view: 1.2,
+                favorite: 3.5,
+                cart_add: 4.0,
+                purchase: 6.0,
+                comment: 2.5,
+                report: -5.0,
+                dwell: 1.6
+            },
+            balanced: {
+                impression: 0.03,
+                click: 1.2,
+                detail: 1.5,
+                detail_view: 1.5,
+                favorite: 4.0,
+                cart_add: 4.5,
+                purchase: 6.0,
+                comment: 3.0,
+                report: -6.0,
+                dwell: 2.0
+            },
+            explore: {
+                impression: 0.05,
+                click: 1.0,
+                detail: 1.2,
+                detail_view: 1.2,
+                favorite: 3.2,
+                cart_add: 3.8,
+                purchase: 5.5,
+                comment: 2.6,
+                report: -5.5,
+                dwell: 2.4
+            }
+        };
+
+        function renderRecoWeightInputs(weights = {}) {
+            const grid = document.getElementById('reco-weights-grid');
+            if (!grid) return;
+            const html = RECO_WEIGHT_KEYS.map((key) => `
+                <label style="display:flex; flex-direction:column; gap:6px; font-size:13px; color:#444;">
+                    <span>${key}</span>
+                    <input type="number" step="0.01" data-reco-weight="${key}" value="${Number(weights[key] ?? 0)}" style="padding:6px 8px; border:1px solid #ddd; border-radius:6px;">
+                </label>
+            `).join('');
+            grid.innerHTML = html;
+        }
+
+        function loadRecoConfig() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            fetch('/api/admin/reco-config', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                if (!data.success || !data.config) {
+                    showToast('加载推荐配置失败', 'error');
+                    return;
+                }
+                const cfg = data.config;
+                document.getElementById('reco-enabled-toggle').checked = !!cfg.enabled;
+                document.getElementById('reco-cache-enabled-toggle').checked = !!cfg.cache_enabled;
+                document.getElementById('reco-cache-ttl').value = Number(cfg.cache_ttl_sec || 120);
+                document.getElementById('reco-cf-min-interactions').value = Number(cfg.cf_min_interactions || 3);
+                document.getElementById('reco-cf-min-neighbors').value = Number(cfg.cf_min_neighbors || 2);
+                document.getElementById('reco-cf-similarity').value = String(cfg.cf_similarity || 'cosine').toLowerCase() === 'pearson' ? 'pearson' : 'cosine';
+                document.getElementById('reco-ab-enabled-toggle').checked = !!cfg.ab_enabled;
+                document.getElementById('reco-ab-traffic-pct').value = Number(cfg.ab_traffic_pct ?? 20);
+                document.getElementById('reco-ab-cf-min-interactions').value = Number(cfg.ab_variant_cf_min_interactions || 1);
+                document.getElementById('reco-ab-cf-min-neighbors').value = Number(cfg.ab_variant_cf_min_neighbors || 1);
+                document.getElementById('reco-ab-cf-similarity').value = String(cfg.ab_variant_cf_similarity || 'pearson').toLowerCase() === 'cosine' ? 'cosine' : 'pearson';
+                document.getElementById('reco-alert-ctr-min-pct').value = Number(cfg.alert_ctr_min_pct ?? 1);
+                document.getElementById('reco-alert-cf-hit-min-pct').value = Number(cfg.alert_cf_hit_min_pct ?? 5);
+                document.getElementById('reco-gateway-enabled-toggle').checked = !!cfg.reco_gateway_enabled;
+                document.getElementById('reco-gateway-base-url').value = String(cfg.reco_gateway_base_url || 'http://localhost:3011');
+                document.getElementById('reco-gateway-traffic-pct').value = Number(cfg.reco_gateway_traffic_pct ?? 100);
+                renderRecoWeightInputs(cfg.weights || {});
+            })
+            .catch((err) => {
+                console.error('loadRecoConfig failed:', err);
+                showToast('加载推荐配置失败', 'error');
+            });
+        }
+
+        function saveRecoConfig() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            const weights = {};
+            document.querySelectorAll('input[data-reco-weight]').forEach((input) => {
+                const key = input.getAttribute('data-reco-weight');
+                weights[key] = Number(input.value || 0);
+            });
+            const payload = {
+                enabled: document.getElementById('reco-enabled-toggle').checked,
+                cache_enabled: document.getElementById('reco-cache-enabled-toggle').checked,
+                cache_ttl_sec: Number(document.getElementById('reco-cache-ttl').value || 120),
+                cf_min_interactions: Number(document.getElementById('reco-cf-min-interactions').value || 3),
+                cf_min_neighbors: Number(document.getElementById('reco-cf-min-neighbors').value || 2),
+                cf_similarity: document.getElementById('reco-cf-similarity').value || 'cosine',
+                ab_enabled: document.getElementById('reco-ab-enabled-toggle').checked,
+                ab_traffic_pct: Number(document.getElementById('reco-ab-traffic-pct').value || 20),
+                ab_variant_cf_min_interactions: Number(document.getElementById('reco-ab-cf-min-interactions').value || 1),
+                ab_variant_cf_min_neighbors: Number(document.getElementById('reco-ab-cf-min-neighbors').value || 1),
+                ab_variant_cf_similarity: document.getElementById('reco-ab-cf-similarity').value || 'pearson',
+                alert_ctr_min_pct: Number(document.getElementById('reco-alert-ctr-min-pct').value || 1),
+                alert_cf_hit_min_pct: Number(document.getElementById('reco-alert-cf-hit-min-pct').value || 5),
+                reco_gateway_enabled: document.getElementById('reco-gateway-enabled-toggle').checked,
+                reco_gateway_base_url: (document.getElementById('reco-gateway-base-url').value || 'http://localhost:3011').trim(),
+                reco_gateway_traffic_pct: Number(document.getElementById('reco-gateway-traffic-pct').value || 100),
+                weights
+            };
+            fetch('/api/admin/reco-config', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                if (!data.success) {
+                    showToast(data.message || '保存推荐配置失败', 'error');
+                    return;
+                }
+                showToast('推荐配置已保存，正在自动刷新推荐缓存...', 'success');
+                loadRecoConfig();
+                refreshRecoCacheNow(true);
+            })
+            .catch((err) => {
+                console.error('saveRecoConfig failed:', err);
+                showToast('保存推荐配置失败', 'error');
+            });
+        }
+
+        function applyRecoWeightPreset(presetName) {
+            const preset = RECO_WEIGHT_PRESETS[presetName];
+            if (!preset) return;
+            RECO_WEIGHT_KEYS.forEach((key) => {
+                const input = document.querySelector(`input[data-reco-weight="${key}"]`);
+                if (input) input.value = Number(preset[key] ?? 0);
+            });
+            showToast(`已应用${presetName === 'conservative' ? '保守' : presetName === 'explore' ? '探索' : '均衡'}模板，请点击“保存推荐配置”生效`, 'info');
+        }
+
+        function refreshRecoCacheNow(silent = false) {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            fetch('/api/admin/reco-cache/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ limit_per_user: 20, max_users: 120 })
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                if (!data.success) {
+                    if (!silent) showToast(data.message || '刷新推荐缓存失败', 'error');
+                    return;
+                }
+                if (!silent) {
+                    showToast(`推荐缓存刷新完成：${data.refreshed_users || 0} 个用户`, 'success');
+                }
+            })
+            .catch((err) => {
+                console.error('refreshRecoCacheNow failed:', err);
+                if (!silent) showToast('刷新推荐缓存失败', 'error');
+            });
+        }
+
+        function refreshRecoSnapshotNow() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            fetch('/api/admin/reco-snapshot/refresh', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ days: 30 })
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                if (!data.success) {
+                    showToast(data.message || '刷新评分矩阵快照失败', 'error');
+                    return;
+                }
+                showToast(`评分矩阵快照已刷新：${data.affected_pairs || 0} 条`, 'success');
+            })
+            .catch((err) => {
+                console.error('refreshRecoSnapshotNow failed:', err);
+                showToast('刷新评分矩阵快照失败', 'error');
+            });
+        }
+
+        function drainRecoQueueNow() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            fetch('/api/admin/reco-queue/drain', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ batch: 500 })
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                if (!data.success) {
+                    showToast(data.message || '消费队列失败', 'error');
+                    return;
+                }
+                showToast(`队列消费完成：拉取${data.pulled || 0}，成功${data.done || 0}，重试${data.retried || 0}，失败${data.failed || 0}`, 'success');
+            })
+            .catch((err) => {
+                console.error('drainRecoQueueNow failed:', err);
+                showToast('消费队列失败', 'error');
+            });
+        }
+
+        function backfillRecoStrategyNow() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            fetch('/api/admin/reco-events/backfill-strategy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ days: 30, limit: 10000 })
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                if (!data.success) {
+                    showToast(data.message || '回填历史策略归因失败', 'error');
+                    return;
+                }
+                showToast(`回填完成：扫描${data.scanned || 0}，更新${data.updated || 0}，缓存命中${data.from_cache || 0}`, 'success');
+                loadRecoMetrics();
+            })
+            .catch((err) => {
+                console.error('backfillRecoStrategyNow failed:', err);
+                showToast('回填历史策略归因失败', 'error');
+            });
+        }
+
+        function runRecoRegressionNow() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            fetch('/api/admin/reco-regression/run', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                if (!data.success) {
+                    showToast(data.message || '运行推荐回归检查失败', 'error');
+                    return;
+                }
+                showToast(`回归检查完成：检查${data.checked || 0}，通过${data.passed || 0}，失败${data.failed || 0}`, data.failed > 0 ? 'warning' : 'success');
+            })
+            .catch((err) => {
+                console.error('runRecoRegressionNow failed:', err);
+                showToast('运行推荐回归检查失败', 'error');
+            });
+        }
+
+        function checkRecoAlertsNow() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            fetch('/api/admin/reco-alerts/check', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                if (!data.success) {
+                    showToast(data.message || '执行阈值告警检查失败', 'error');
+                    return;
+                }
+                if (data.alerted && Array.isArray(data.alerts) && data.alerts.length) {
+                    showToast(`触发告警：${data.alerts.join('；')}`, 'warning');
+                } else {
+                    showToast('告警检查通过：CTR/CF命中均在阈值之上', 'success');
+                }
+            })
+            .catch((err) => {
+                console.error('checkRecoAlertsNow failed:', err);
+                showToast('执行阈值告警检查失败', 'error');
+            });
+        }
+
+        function checkRecoGatewayNow() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            fetch('/api/admin/reco-gateway/check', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                if (!data.success || !data.gateway) {
+                    showToast(data.message || '检查推荐网关健康失败', 'error');
+                    return;
+                }
+                const g = data.gateway;
+                if (g.healthy) {
+                    showToast(`推荐网关健康：延迟 ${g.latency_ms || 0}ms`, 'success');
+                } else {
+                    showToast(`推荐网关异常：${g.last_error || 'unknown'}`, 'warning');
+                }
+                loadRecoMetrics();
+            })
+            .catch((err) => {
+                console.error('checkRecoGatewayNow failed:', err);
+                showToast('检查推荐网关健康失败', 'error');
+            });
+        }
+
+        function resetRecoGatewayCountersNow() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            fetch('/api/admin/reco-gateway/reset-counters', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                if (!data.success) {
+                    showToast(data.message || '重置网关计数器失败', 'error');
+                    return;
+                }
+                showToast('网关计数器已重置', 'success');
+                loadRecoMetrics();
+            })
+            .catch((err) => {
+                console.error('resetRecoGatewayCountersNow failed:', err);
+                showToast('重置网关计数器失败', 'error');
+            });
+        }
+
+        document.getElementById('save-reco-config-btn')?.addEventListener('click', saveRecoConfig);
+        document.getElementById('refresh-reco-cache-btn')?.addEventListener('click', refreshRecoCacheNow);
+        document.getElementById('refresh-reco-snapshot-btn')?.addEventListener('click', refreshRecoSnapshotNow);
+        document.getElementById('drain-reco-queue-btn')?.addEventListener('click', drainRecoQueueNow);
+        document.getElementById('backfill-reco-strategy-btn')?.addEventListener('click', backfillRecoStrategyNow);
+        document.getElementById('run-reco-regression-btn')?.addEventListener('click', runRecoRegressionNow);
+        document.getElementById('check-reco-alerts-btn')?.addEventListener('click', checkRecoAlertsNow);
+        document.getElementById('check-reco-gateway-btn')?.addEventListener('click', checkRecoGatewayNow);
+        document.getElementById('reset-reco-gateway-counter-btn')?.addEventListener('click', resetRecoGatewayCountersNow);
+        document.getElementById('preset-conservative-btn')?.addEventListener('click', () => applyRecoWeightPreset('conservative'));
+        document.getElementById('preset-balanced-btn')?.addEventListener('click', () => applyRecoWeightPreset('balanced'));
+        document.getElementById('preset-explore-btn')?.addEventListener('click', () => applyRecoWeightPreset('explore'));
+
+        // 模态框控制
+        const modal = document.getElementById('video-modal');
+        const closeModalBtn = document.getElementById('close-modal');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const previewVideo = document.getElementById('preview-video');
+        const modalVideoTitle = document.getElementById('modal-video-title');
+        const previewVideoDescription = document.getElementById('preview-video-description');
+        let currentVideoId = null;
+        let currentEditingBookId = null;
+        let bookEditMode = 'edit';
+        const bookEditModal = document.getElementById('book-edit-modal');
+        const bookEditModalTitle = document.getElementById('book-edit-modal-title');
+        const bookEditTitle = document.getElementById('book-edit-title');
+        const bookEditAuthor = document.getElementById('book-edit-author');
+        const bookEditCategory = document.getElementById('book-edit-category');
+        const bookEditPrice = document.getElementById('book-edit-price');
+        const bookEditDescription = document.getElementById('book-edit-description');
+
+        function openModal(video) {
+            currentVideoId = video.id;
+            // 支持多种字段名格式
+            modalVideoTitle.textContent = video.title || video.video_name || video.name || '视频预览';
+            previewVideo.src = video.url || video.video_url || '';
+            previewVideoDescription.textContent = video.description || '无描述';
+            
+            // 检查并显示举报信息
+            let reportInfoDiv = document.getElementById('report-info');
+            if (!reportInfoDiv) {
+                // 如果没有举报信息元素，创建它
+                const reportSection = document.createElement('div');
+                reportSection.id = 'report-info';
+                reportSection.className = 'report-info-section';
+                
+                // 将举报信息区域插入到模态框中
+                // previewContainer在modal-body中，所以应该插入到modal-body中
+                const modalBody = document.querySelector('.modal-body');
+                const previewContainer = document.querySelector('.video-preview-container');
+                
+                // 安全地插入元素：插入到modal-body中，在previewContainer之后
+                if (modalBody) {
+                    if (previewContainer && modalBody.contains(previewContainer)) {
+                        // 如果previewContainer存在，插入到其后
+                        if (previewContainer.nextSibling) {
+                            modalBody.insertBefore(reportSection, previewContainer.nextSibling);
+                        } else {
+                            // 如果没有下一个兄弟节点，直接追加
+                            modalBody.appendChild(reportSection);
+                        }
+                    } else {
+                        // 如果找不到previewContainer，追加到modal-body末尾
+                        modalBody.appendChild(reportSection);
+                    }
+                }
+                reportInfoDiv = reportSection;
+            }
+            
+            // 举报原因文本映射
+            const reasonMap = {
+                '1': '内容违规',
+                '2': '版权侵犯',
+                '3': '低俗内容',
+                '4': '虚假信息',
+                '5': '其他原因'
+            };
+            
+            // 更新举报信息
+            if (video.reportReason) {
+                reportInfoDiv.innerHTML = `
+                    <div class="report-info-title">举报信息</div>
+                    <div class="report-info-item">
+                        <span class="report-info-label">举报原因：</span>
+                        <span class="report-info-value">${reasonMap[video.reportReason] || '未知'}</span>
+                    </div>
+                    ${video.reportNote ? `
+                    <div class="report-info-item">
+                        <span class="report-info-label">详细说明：</span>
+                        <span class="report-info-value">${video.reportNote}</span>
+                    </div>
+                    ` : ''}
+                    <div class="report-info-item">
+                        <span class="report-info-label">举报人：</span>
+                        <span class="report-info-value">${video.reporter || '匿名'}</span>
+                    </div>
+                    <div class="report-info-item">
+                        <span class="report-info-label">举报时间：</span>
+                        <span class="report-info-value">${video.reportTime ? new Date(video.reportTime).toLocaleString('zh-CN') : '未知'}</span>
+                    </div>
+                `;
+                reportInfoDiv.style.display = 'block';
+            } else {
+                reportInfoDiv.style.display = 'none';
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+            previewVideo.pause();
+            previewVideo.src = '';
+            currentVideoId = null;
+        }
+
+        function openBookEditModal(book) {
+            if (!bookEditModal || !book) return;
+            bookEditMode = 'edit';
+            currentEditingBookId = Number(book.id);
+            if (bookEditModalTitle) bookEditModalTitle.textContent = '编辑图书';
+            bookEditTitle.value = String(book.title || '');
+            bookEditAuthor.value = String(book.author || '');
+            bookEditCategory.value = String(book.category || '');
+            bookEditPrice.value = String(Number(book.price || 0));
+            bookEditDescription.value = String(book.description || '');
+            bookEditModal.style.display = 'flex';
+        }
+
+        function openBookCreateModal() {
+            if (!bookEditModal) return;
+            bookEditMode = 'create';
+            currentEditingBookId = null;
+            if (bookEditModalTitle) bookEditModalTitle.textContent = '新增图书';
+            bookEditTitle.value = '';
+            bookEditAuthor.value = '';
+            bookEditCategory.value = '';
+            bookEditPrice.value = '';
+            bookEditDescription.value = '';
+            bookEditModal.style.display = 'flex';
+        }
+
+        function closeBookEditModal() {
+            if (!bookEditModal) return;
+            bookEditModal.style.display = 'none';
+            currentEditingBookId = null;
+            bookEditMode = 'edit';
+        }
+
+        async function submitBookEdit() {
+            const token = localStorage.getItem('token');
+            if (!token || !currentEditingBookId) return showToast('请先登录', 'error');
+            const payload = {
+                title: String(bookEditTitle?.value || '').trim(),
+                author: String(bookEditAuthor?.value || '').trim(),
+                category: String(bookEditCategory?.value || '').trim(),
+                price: Number(bookEditPrice?.value || 0),
+                description: String(bookEditDescription?.value || '').trim()
+            };
+            if (!payload.title || !payload.author || !payload.category || !payload.description || Number.isNaN(payload.price) || payload.price <= 0) {
+                showToast('请输入合法的图书信息', 'error');
+                return;
+            }
+            try {
+                const isCreate = bookEditMode === 'create';
+                const url = isCreate ? '/api/admin/books' : `/api/admin/books/${currentEditingBookId}`;
+                const method = isCreate ? 'POST' : 'PUT';
+                const resp = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(isCreate ? { ...payload, stock_quantity: 0, cover_url: '' } : payload)
+                });
+                const data = await resp.json();
+                if (!resp.ok || !data.success) throw new Error(data.message || '更新失败');
+                showToast(isCreate ? '图书新增成功' : '图书信息已更新', 'success');
+                closeBookEditModal();
+                loadBookManagementList();
+            } catch (error) {
+                showToast(error.message || '更新失败', 'error');
+            }
+        }
+
+        closeModalBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        document.getElementById('book-edit-close')?.addEventListener('click', closeBookEditModal);
+        document.getElementById('book-edit-cancel')?.addEventListener('click', closeBookEditModal);
+        document.getElementById('book-edit-save')?.addEventListener('click', submitBookEdit);
+
+        // 点击模态框外部关闭模态框
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+            if (event.target === bookEditModal) {
+                closeBookEditModal();
+            }
+        });
+
+        // 模态框操作按钮（通过和拒绝按钮已移除，审核操作在表格中直接进行）
+
+
+
+        // 加载用户列表
+        function loadUsers() {
+            const tableBody = document.getElementById('user-list-table');
+            tableBody.innerHTML = '<tr class="loading"><td colspan="6" class="text-center"><div class="loading-spinner"></div>加载中...</td></tr>';
+            
+            // 从服务器API获取用户数据
+            const token = localStorage.getItem('token');
+            console.log('当前Token:', token);
+            console.log('调用用户列表API');
+            
+            fetch('/api/admin/users', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+                .then(response => {
+                    console.log('API响应状态:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API响应数据:', data);
+                    if (data.success) {
+                        const users = data.users;
+                        console.log('用户列表数据:', users);
+                        
+                        // 更新表格内容
+                        if (users.length === 0) {
+                            tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">暂无用户</td></tr>';
+                        } else {
+                            tableBody.innerHTML = '';
+                            users.forEach(user => {
+                                const row = document.createElement('tr');
+                                row.className = 'table-hover-row';
+                                
+                                // 格式化时间
+                                const createdAt = new Date(user.created_at || Date.now()).toLocaleString('zh-CN');
+                                
+                                row.innerHTML = `
+                                    <td>${user.id}</td>
+                                    <td>${user.username}</td>
+                                    <td>${user.email}</td>
+                                    <td>${createdAt}</td>
+                                    <td>${user.is_admin ? '管理员' : '普通用户'}</td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button class="table-action-btn view" data-id="${user.id}">查看</button>
+                                            <button class="table-action-btn ${user.is_admin ? 'danger' : 'success'}" data-id="${user.id}" data-admin="${user.is_admin ? 'true' : 'false'}">
+                                                ${user.is_admin ? '取消管理员' : '设为管理员'}
+                                            </button>
+                                        </div>
+                                    </td>
+                                `;
+                                
+                                tableBody.appendChild(row);
+                            });
+                            
+                            // 绑定表格操作按钮事件
+                            bindUserActionButtons();
+                        }
+                    } else {
+                        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">加载失败，请稍后再试</td></tr>';
+                        showToast('加载用户列表失败', 'error');
+                    }
+                })
+                .catch(error => {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">网络错误，请稍后再试</td></tr>';
+                    showToast('网络错误，请检查服务器连接', 'error');
+                });
+        }
+
+        // 绑定用户表格操作按钮事件
+        function bindUserActionButtons() {
+            // 查看按钮
+            document.querySelectorAll('.table-action-btn.view').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-id');
+                    showToast(`查看用户 ID: ${userId}`, 'info');
+                    // 这里可以添加查看用户详情的逻辑
+                });
+            });
+            
+            // 设为管理员/取消管理员按钮
+            document.querySelectorAll('.table-action-btn[data-admin]').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-id');
+                    const isAdmin = this.getAttribute('data-admin') === 'true';
+                    const token = localStorage.getItem('token');
+                    
+                    if (!token) {
+                        showToast('未登录或登录已过期，请重新登录', 'error');
+                        return;
+                    }
+                    
+                    // 调用API更新用户角色
+                    fetch(`/api/admin/users/${userId}/set-admin`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ isAdmin: !isAdmin })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            if (response.status === 401) {
+                                throw new Error('未授权，请重新登录');
+                            } else if (response.status === 403) {
+                                throw new Error('权限不足');
+                            }
+                            throw new Error('网络请求失败');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            showToast(`用户已${!isAdmin ? '设为管理员' : '取消管理员权限'}`, 'success');
+                            // 重新加载用户列表
+                            loadUsers();
+                        } else {
+                            showToast('操作失败: ' + (data.message || '未知错误'), 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('设置管理员权限失败:', error);
+                        showToast('操作失败: ' + error.message, 'error');
+                    });
+                });
+            });
+        }
+
+
+
+
+
+        // 加载待审核视频
+        function loadPendingVideos() {
+            const tableBody = document.getElementById('pending-videos-table');
+            tableBody.innerHTML = '<tr class="loading"><td colspan="6" class="text-center"><div class="loading-spinner"></div>加载中...</td></tr>';
+            
+            // 获取token
+            const token = localStorage.getItem('token');
+            if (!token) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">未登录或登录已过期</td></tr>';
+                return;
+            }
+            
+            // 调用服务器API获取待审核视频
+            fetch('/api/admin/videos?status=pending', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('网络请求失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const pendingVideos = data.videos;
+                    
+                    // 更新表格内容
+                    if (pendingVideos.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">暂无待审核视频</td></tr>';
+                    } else {
+                        tableBody.innerHTML = '';
+                        pendingVideos.forEach(video => {
+                            const row = document.createElement('tr');
+                            row.className = 'table-hover-row';
+                            
+                            // 格式化时间
+                            const uploadTime = new Date(video.created_at).toLocaleString('zh-CN');
+                            
+                            row.innerHTML = `
+                                <td>${video.id}</td>
+                                <td>${video.video_name}</td>
+                                <td>${video.author}</td>
+                                <td>${uploadTime}</td>
+                                <td>${video.duration || '00:00'}</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="table-action-btn view" data-id="${video.id}" data-url="${video.video_url}">预览</button>
+                                        <button class="table-action-btn approve" data-id="${video.id}">通过</button>
+                                        <button class="table-action-btn reject" data-id="${video.id}">拒绝</button>
+                                    </div>
+                                </td>
+                            `;
+                            
+                            tableBody.appendChild(row);
+                        });
+                        
+                        // 绑定表格操作按钮事件
+                        bindActionButtons();
+                    }
+                    
+                    // 安全地更新待审核视频数量（如果元素存在）
+                    const pendingVideosCount = document.getElementById('pending-videos');
+                    if (pendingVideosCount) {
+                        pendingVideosCount.textContent = pendingVideos.length;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('加载待审核视频失败:', error);
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">加载失败: ' + error.message + '</td></tr>';
+            });
+        }
+
+        // 加载已通过视频
+        function loadApprovedVideos() {
+            const tableBody = document.getElementById('approved-videos-table');
+            tableBody.innerHTML = '<tr class="loading"><td colspan="6" class="text-center"><div class="loading-spinner"></div>加载中...</td></tr>';
+            
+            // 获取token
+            const token = localStorage.getItem('token');
+            if (!token) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">未登录或登录已过期</td></tr>';
+                return;
+            }
+            
+            // 调用服务器API获取已通过视频
+            fetch('/api/admin/videos?status=approved', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('网络请求失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const approvedVideos = data.videos;
+                    
+                    // 更新表格内容
+                    if (approvedVideos.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">暂无已通过视频</td></tr>';
+                    } else {
+                        tableBody.innerHTML = '';
+                        approvedVideos.forEach(video => {
+                            const row = document.createElement('tr');
+                            row.className = 'table-hover-row';
+                            
+                            // 格式化时间
+                            const uploadTime = new Date(video.created_at).toLocaleString('zh-CN');
+                            const reviewTime = video.review_time ? new Date(video.review_time).toLocaleString('zh-CN') : '未知';
+                            
+                            row.innerHTML = `
+                                <td>${video.id}</td>
+                                <td>${video.video_name}</td>
+                                <td>${video.author}</td>
+                                <td>${uploadTime}</td>
+                                <td>${reviewTime}</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="table-action-btn view" data-id="${video.id}" data-url="${video.video_url}">预览</button>
+                                    </div>
+                                </td>
+                            `;
+                            
+                            tableBody.appendChild(row);
+                        });
+                        
+                        // 绑定表格操作按钮事件
+                        bindActionButtons();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('加载已通过视频失败:', error);
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">加载失败: ' + error.message + '</td></tr>';
+            });
+        }
+
+        // 加载已拒绝视频
+        function loadRejectedVideos() {
+            const tableBody = document.getElementById('rejected-videos-table');
+            tableBody.innerHTML = '<tr class="loading"><td colspan="6" class="text-center"><div class="loading-spinner"></div>加载中...</td></tr>';
+            
+            // 获取token
+            const token = localStorage.getItem('token');
+            if (!token) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">未登录或登录已过期</td></tr>';
+                return;
+            }
+            
+            // 调用服务器API获取已拒绝视频
+            fetch('/api/admin/videos?status=rejected', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('网络请求失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const rejectedVideos = data.videos;
+                    
+                    // 更新表格内容
+                    if (rejectedVideos.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">暂无已拒绝视频</td></tr>';
+                    } else {
+                        tableBody.innerHTML = '';
+                        rejectedVideos.forEach(video => {
+                            const row = document.createElement('tr');
+                            row.className = 'table-hover-row';
+                            
+                            // 格式化时间
+                            const uploadTime = new Date(video.created_at).toLocaleString('zh-CN');
+                            const reviewTime = video.review_time ? new Date(video.review_time).toLocaleString('zh-CN') : '未知';
+                            
+                            row.innerHTML = `
+                                <td>${video.id}</td>
+                                <td>${video.video_name}</td>
+                                <td>${video.author}</td>
+                                <td>${uploadTime}</td>
+                                <td>${reviewTime}</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="table-action-btn view" data-id="${video.id}" data-url="${video.video_url}">预览</button>
+                                    </div>
+                                </td>
+                            `;
+                            
+                            tableBody.appendChild(row);
+                        });
+                        
+                        // 绑定表格操作按钮事件
+                        bindActionButtons();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('加载已拒绝视频失败:', error);
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">加载失败: ' + error.message + '</td></tr>';
+            });
+        }
+
+
+
+        // 处理视频审核
+        function handleVideoApproval(videoId, status) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showToast('请先登录', 'error');
+                return;
+            }
+
+            // 确定审核操作
+            const action = status === 'approved' ? 'approve' : 'reject';
+            
+            // 调用后端API更新视频状态
+            fetch(`/api/admin/videos/${videoId}/review`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    action: action,
+                    comments: ''
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    // 处理相关的举报信息（如果有）
+                    const reports = JSON.parse(localStorage.getItem('videoReports') || '[]');
+                    const remainingReports = reports.filter(report => report.videoId !== videoId);
+                    localStorage.setItem('videoReports', JSON.stringify(remainingReports));
+                    
+                    // 刷新待审核视频列表
+                    loadPendingVideos();
+                    
+                    // 刷新已通过/已拒绝视频列表
+                    if (status === 'approved') {
+                        loadApprovedVideos();
+                    } else {
+                        loadRejectedVideos();
+                    }
+                    
+                    // 显示成功消息
+                    showToast(`视频${status === 'approved' ? '已通过审核，已在图书广场发布' : '已拒绝'}`, 'success');
+                } else {
+                    showToast('审核失败: ' + result.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('审核视频失败:', error);
+                showToast('审核失败，请稍后重试', 'error');
+            });
+        }
+
+        // 加载被举报视频
+        function loadReportedVideos() {
+            const tableBody = document.getElementById('reported-videos-table');
+            tableBody.innerHTML = '<tr class="loading"><td colspan="6" class="text-center"><div class="loading-spinner"></div>加载中...</td></tr>';
+            
+            // 获取token
+            const token = localStorage.getItem('token');
+            if (!token) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">未登录或登录已过期</td></tr>';
+                return;
+            }
+            
+            // 从服务器API获取举报列表
+            fetch('/api/admin/reports', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('网络请求失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const reports = data.reports;
+                    
+                    // 更新表格内容
+                    if (reports.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">暂无被举报视频</td></tr>';
+                    } else {
+                        tableBody.innerHTML = '';
+                        reports.forEach(report => {
+                            const row = document.createElement('tr');
+                            row.className = 'table-hover-row';
+                            
+                            // 格式化时间
+                            const uploadTime = report.created_at ? new Date(report.created_at).toLocaleString('zh-CN') : '未知';
+                            const reportTime = report.created_at ? new Date(report.created_at).toLocaleString('zh-CN') : '未知';
+                            
+                            row.innerHTML = `
+                                <td>${report.video_id}</td>
+                                <td>${report.video_name || '未知'}</td>
+                                <td>${report.video_owner_name || '未知'}</td>
+                                <td>${uploadTime}</td>
+                                <td>
+                                    <div><strong>举报原因:</strong> ${report.reasonText || '未知'}</div>
+                                    ${report.note ? `<div><strong>详细说明:</strong> ${report.note}</div>` : ''}
+                                    <div><strong>举报人:</strong> ${report.reporter_name || '匿名'}</div>
+                                    <div><strong>举报时间:</strong> ${reportTime}</div>
+                                </td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="table-action-btn view" data-id="${report.video_id}" data-url="${report.video_url}" data-report-id="${report.id}">预览</button>
+                                        <button class="table-action-btn danger" data-id="${report.id}" data-video-id="${report.video_id}" data-action="ban">下架</button>
+                                        <button class="table-action-btn secondary" data-id="${report.id}" data-action="ignore">忽略</button>
+                                    </div>
+                                </td>
+                            `;
+                            
+                            tableBody.appendChild(row);
+                        });
+                        
+                        // 绑定表格操作按钮事件
+                        bindReportActionButtons();
+                    }
+                    
+                    // 安全地更新被举报视频数量（如果元素存在）
+                    const reportedVideosCount = document.getElementById('reported-videos');
+                    if (reportedVideosCount) {
+                        reportedVideosCount.textContent = reports.length;
+                    }
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">加载失败: ' + (data.message || '未知错误') + '</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('加载被举报视频失败:', error);
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">加载失败: ' + error.message + '</td></tr>';
+            });
+        }
+        
+        // 评论管理相关变量
+        let currentCommentPage = 1;
+        let commentPageSize = 20;
+        let commentSearchKeyword = '';
+
+        // 加载评论列表
+        function loadComments(page = 1, search = '') {
+            const tableBody = document.getElementById('comments-table');
+            tableBody.innerHTML = '<tr class="loading"><td colspan="6" class="text-center"><div class="loading-spinner"></div>加载中...</td></tr>';
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">未登录或登录已过期</td></tr>';
+                return;
+            }
+            
+            let url = `/api/admin/comments?page=${page}&limit=${commentPageSize}`;
+            if (search && search.trim()) {
+                url += `&search=${encodeURIComponent(search.trim())}`;
+            }
+            
+            fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('网络请求失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const comments = data.comments || [];
+                    const total = data.total || 0;
+                    const totalPages = data.totalPages || 1;
+                    
+                    currentCommentPage = page;
+                    
+                    if (comments.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">暂无评论数据</td></tr>';
+                        document.getElementById('comments-pagination').style.display = 'none';
+                    } else {
+                        tableBody.innerHTML = '';
+                        comments.forEach(comment => {
+                            const row = document.createElement('tr');
+                            row.className = 'table-hover-row';
+                            
+                            const commentTime = comment.created_at ? new Date(comment.created_at).toLocaleString('zh-CN') : '未知';
+                            const content = (comment.content || '').length > 50 
+                                ? (comment.content.substring(0, 50) + '...') 
+                                : (comment.content || '');
+                            
+                            row.innerHTML = `
+                                <td>${comment.id}</td>
+                                <td title="${comment.content || ''}">${content}</td>
+                                <td>${comment.username || '未知用户'}</td>
+                                <td title="${comment.video_name || ''}">${(comment.video_name || '').length > 30 ? (comment.video_name.substring(0, 30) + '...') : (comment.video_name || '未知视频')}</td>
+                                <td>${commentTime}</td>
+                                <td>
+                                    <div class="table-actions">
+                                        <button class="table-action-btn danger delete-comment-btn" data-comment-id="${comment.id}">删除</button>
+                                    </div>
+                                </td>
+                            `;
+                            
+                            tableBody.appendChild(row);
+                        });
+                        
+                        // 更新分页信息
+                        document.getElementById('comments-page-info').textContent = `第 ${page} 页，共 ${totalPages} 页（共 ${total} 条）`;
+                        document.getElementById('comments-pagination').style.display = totalPages > 1 ? 'block' : 'none';
+                        document.getElementById('comments-prev-btn').disabled = page <= 1;
+                        document.getElementById('comments-next-btn').disabled = page >= totalPages;
+                        
+                        // 绑定删除按钮事件
+                        bindCommentDeleteButtons();
+                    }
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">加载失败: ' + (data.message || '未知错误') + '</td></tr>';
+                }
+            })
+            .catch(error => {
+                console.error('加载评论失败:', error);
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">加载失败: ' + error.message + '</td></tr>';
+            });
+        }
+
+        // 绑定评论删除按钮事件
+        function bindCommentDeleteButtons() {
+            document.querySelectorAll('.delete-comment-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const commentId = this.getAttribute('data-comment-id');
+                    if (confirm('确定要删除这条评论吗？此操作不可恢复。')) {
+                        deleteComment(commentId);
+                    }
+                });
+            });
+        }
+
+        // 删除评论
+        function deleteComment(commentId) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showToast('未登录或登录已过期', 'error');
+                return;
+            }
+            
+            fetch(`/api/admin/comments/${commentId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('网络请求失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    showToast('评论已删除', 'success');
+                    loadComments(currentCommentPage, commentSearchKeyword);
+                    // 刷新统计数据
+                    if (document.getElementById('dashboard-section').classList.contains('hidden') === false) {
+                        loadDashboardStats();
+                    }
+                } else {
+                    showToast('删除失败: ' + (data.message || '未知错误'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('删除评论失败:', error);
+                showToast('删除失败，请稍后重试', 'error');
+            });
+        }
+
+        // 加载数据分析统计
+        function loadDashboardStats() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showToast('未登录或登录已过期', 'error');
+                return;
+            }
+            
+            fetch('/api/admin/statistics', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('网络请求失败');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    const stats = data.statistics;
+                    console.log('统计数据:', stats);
+                    
+                    // 更新统计卡片
+                    const totalUsersEl = document.getElementById('total-users');
+                    const totalVideosEl = document.getElementById('total-videos');
+                    const approvedVideosEl = document.getElementById('approved-videos');
+                    const pendingVideosCountEl = document.getElementById('pending-videos-count');
+                    const reportedCountEl = document.getElementById('reported-count');
+                    const totalLikesEl = document.getElementById('total-likes');
+                    const totalCollectionsEl = document.getElementById('total-collections');
+                    const totalCommentsEl = document.getElementById('total-comments');
+                    
+                    if (totalUsersEl) totalUsersEl.textContent = stats.totalUsers || 0;
+                    if (totalVideosEl) totalVideosEl.textContent = stats.totalVideos || 0;
+                    if (approvedVideosEl) approvedVideosEl.textContent = stats.approvedVideos || 0;
+                    if (pendingVideosCountEl) pendingVideosCountEl.textContent = stats.pendingVideos || 0;
+                    if (reportedCountEl) reportedCountEl.textContent = stats.pendingReports || 0;
+                    if (totalLikesEl) totalLikesEl.textContent = stats.totalLikes || 0;
+                    if (totalCollectionsEl) totalCollectionsEl.textContent = stats.totalCollections || 0;
+                    if (totalCommentsEl) totalCommentsEl.textContent = stats.totalComments || 0;
+                    
+                    // 加载热门视频列表
+                    loadTopVideos(stats.topVideos || []);
+                    
+                    // 加载视频上传趋势
+                    loadUploadTrend(stats.uploadTrend || []);
+                    
+                    // 加载最近注册用户
+                    loadRecentUsers(stats.recentUsers || []);
+                    
+                    // 加载视频作者分布
+                    loadAuthorDistribution(stats.authorDistribution || []);
+                    // 加载推荐监控指标
+                    loadRecoMetrics();
+                } else {
+                    console.error('统计数据API返回失败:', data);
+                    showToast('加载统计数据失败: ' + (data.message || '未知错误'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('加载统计数据失败:', error);
+                showToast('加载统计数据失败，请稍后重试', 'error');
+            });
+        }
+
+        // 加载推荐监控指标
+        function loadRecoMetrics() {
+            const token = localStorage.getItem('token');
+            const overviewEl = document.getElementById('reco-metrics-overview');
+            const distEl = document.getElementById('reco-event-distribution');
+            if (!token || !overviewEl || !distEl) return;
+            fetch('/api/admin/reco-metrics', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then((response) => {
+                if (!response.ok) throw new Error('网络请求失败');
+                return response.json();
+            })
+            .then((data) => {
+                if (!data.success || !data.metrics) {
+                    throw new Error(data.message || '指标返回失败');
+                }
+                const m = data.metrics;
+                const strategyDist = Array.isArray(m.strategy_distribution_7d) ? m.strategy_distribution_7d : [];
+                const strategyTrend = Array.isArray(m.strategy_ctr_trend_7d) ? m.strategy_ctr_trend_7d : [];
+                const strategyEffect = Array.isArray(m.strategy_effect_7d) ? m.strategy_effect_7d : [];
+                const strategySummary = Array.isArray(m.strategy_summary_7d) ? m.strategy_summary_7d : [];
+                const strategyDailyMatrix = Array.isArray(m.strategy_daily_matrix_7d) ? m.strategy_daily_matrix_7d : [];
+                const abExperimentSummary = Array.isArray(m.ab_experiment_summary_7d) ? m.ab_experiment_summary_7d : [];
+                const strategyDistHtml = strategyDist.length
+                    ? strategyDist.map((item) => `
+                        <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #e5e7eb; padding:4px 0;">
+                            <span>${item.strategy}</span>
+                            <strong>${item.count} (${item.ratio_pct}%)</strong>
+                        </div>
+                    `).join('')
+                    : '<div style="color:#999;">暂无策略分布数据</div>';
+                const strategyTrendHtml = strategyTrend.length
+                    ? strategyTrend.map((item) => `
+                        <div style="display:grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap:8px; border-bottom:1px dashed #e5e7eb; padding:4px 0; font-size:12px;">
+                            <span>${item.date}</span>
+                            <span>CF:${item.cf_ratio_pct}%</span>
+                            <span>CTR:${item.ctr_pct}%</span>
+                            <span>CVR:${item.conversion_pct}%</span>
+                        </div>
+                    `).join('')
+                    : '<div style="color:#999;">暂无趋势数据</div>';
+                const strategyEffectHtml = strategyEffect.length
+                    ? strategyEffect.map((item) => `
+                        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap:8px; border-bottom:1px dashed #e5e7eb; padding:4px 0; font-size:12px;">
+                            <span>${item.strategy}</span>
+                            <span>${item.impression}</span>
+                            <span>${item.click}</span>
+                            <span>${item.ctr_pct}%</span>
+                            <span>${item.click_share_pct}%</span>
+                        </div>
+                    `).join('')
+                    : '<div style="color:#999;">暂无策略效果数据</div>';
+                const strategySummaryCardsHtml = strategySummary.map((item) => `
+                    <div style="padding:10px; background:#fff; border:1px solid #e5e7eb; border-radius:10px;">
+                        <div style="font-size:12px; color:#666; margin-bottom:6px;">${item.strategy.toUpperCase()}</div>
+                        <div style="font-size:13px; line-height:1.7;">
+                            曝光 <strong>${item.impression}</strong> · 点击 <strong>${item.click}</strong><br>
+                            CTR <strong>${item.ctr_pct}%</strong> · 贡献 <strong>${item.click_share_pct}%</strong>
+                        </div>
+                    </div>
+                `).join('');
+                const strategyDailyMatrixHtml = strategyDailyMatrix.length
+                    ? strategyDailyMatrix.map((item) => `
+                        <div style="display:grid; grid-template-columns: 1.2fr 1fr 1fr 1fr 1fr; gap:8px; border-bottom:1px dashed #e5e7eb; padding:6px 0; font-size:12px;">
+                            <span>${item.date}</span>
+                            <span>${item.strategy}</span>
+                            <span>${item.impression}</span>
+                            <span>${item.click}</span>
+                            <span>${item.ctr_pct}%</span>
+                        </div>
+                    `).join('')
+                    : '<div style="color:#999;">暂无按日按策略数据</div>';
+                const abExperimentSummaryHtml = abExperimentSummary.length
+                    ? abExperimentSummary.map((item) => `
+                        <div style="display:grid; grid-template-columns: 0.8fr 1fr 1fr 1fr 1fr 1fr; gap:8px; border-bottom:1px dashed #e5e7eb; padding:6px 0; font-size:12px;">
+                            <span>${item.group}</span>
+                            <span>${item.users}</span>
+                            <span>${item.impression}</span>
+                            <span>${item.click}</span>
+                            <span>${item.ctr_pct}%</span>
+                            <span>${item.conversion_pct}%</span>
+                        </div>
+                    `).join('')
+                    : '<div style="color:#999;">暂无A/B组效果数据</div>';
+                overviewEl.innerHTML = `
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:12px;">
+                        <div style="padding:12px; min-height:66px; background:#ecfeff; border:1px solid #c8f3f9; border-radius:10px;">推荐CTR(5m)<br><strong style="font-size:18px;">${m.reco_ctr_5m || 0}%</strong></div>
+                        <div style="padding:12px; min-height:66px; background:#ecfeff; border:1px solid #c8f3f9; border-radius:10px;">推荐CVR(5m)<br><strong style="font-size:18px;">${m.reco_conversion_5m || 0}%</strong></div>
+                        <div style="padding:12px; min-height:66px; background:#ecfeff; border:1px solid #c8f3f9; border-radius:10px;">推荐CTR(1h)<br><strong style="font-size:18px;">${m.reco_ctr_1h || 0}%</strong></div>
+                        <div style="padding:12px; min-height:66px; background:#ecfeff; border:1px solid #c8f3f9; border-radius:10px;">推荐CVR(1h)<br><strong style="font-size:18px;">${m.reco_conversion_1h || 0}%</strong></div>
+                        <div style="padding:12px; min-height:66px; background:#eefbf5; border:1px solid #d7f1e5; border-radius:10px;">推荐CTR(7d)<br><strong style="font-size:18px;">${m.reco_ctr_7d || 0}%</strong></div>
+                        <div style="padding:12px; min-height:66px; background:#eefbf5; border:1px solid #d7f1e5; border-radius:10px;">推荐总转化率(7d)<br><strong style="font-size:18px;">${m.reco_conversion_7d || 0}%</strong></div>
+                        <div style="padding:12px; min-height:66px; background:#eef2ff; border:1px solid #dfe5ff; border-radius:10px;">冷启动占比(7d)<br><strong style="font-size:18px;">${m.cold_start_ratio_7d || 0}%</strong></div>
+                        <div style="padding:12px; min-height:66px; background:#eef2ff; border:1px solid #dfe5ff; border-radius:10px;">CF命中占比(7d)<br><strong style="font-size:18px;">${m.cf_hit_ratio_7d || 0}%</strong></div>
+                        <div style="padding:12px; min-height:66px; background:#f8fafc; border:1px solid #edf2f7; border-radius:10px;">活跃用户(7d)<br><strong style="font-size:18px;">${m.active_users_7d || 0}</strong></div>
+                        <div style="padding:12px; min-height:66px; background:#eef2ff; border:1px solid #dfe5ff; border-radius:10px;">网关命中率<br><strong style="font-size:18px;">${m.reco_gateway_routed_pct || 0}%</strong></div>
+                        <div style="padding:12px; min-height:66px; background:#eef2ff; border:1px solid #dfe5ff; border-radius:10px;">网关健康状态<br><strong style="font-size:18px;">${m.reco_gateway_healthy ? 'HEALTHY' : 'DOWN'}</strong></div>
+                        <div style="padding:12px; min-height:66px; background:#fef2f2; border:1px solid #ffe1e1; border-radius:10px;">队列待处理<br><strong style="font-size:18px;">${m.queue_pending || 0}</strong></div>
+                    </div>
+                    <div style="margin-top:14px; padding:12px; background:#f8fafc; border:1px solid #edf2f7; border-radius:10px;">
+                        <div style="font-weight:600; margin-bottom:6px;">推荐策略分布(7d)</div>
+                        ${strategyDistHtml}
+                    </div>
+                `;
+                const dist = Array.isArray(m.event_distribution_7d) ? m.event_distribution_7d : [];
+                if (!dist.length) {
+                    distEl.innerHTML = '<p class="text-gray-500">暂无推荐事件数据</p>';
+                    return;
+                }
+                distEl.innerHTML = dist.map((item) => `
+                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:6px 0;">
+                        <span>${item.event_type}</span>
+                        <strong>${item.cnt}</strong>
+                    </div>
+                `).join('');
+            })
+            .catch((error) => {
+                console.error('加载推荐监控失败:', error);
+                overviewEl.innerHTML = '<p class="text-gray-500">推荐监控加载失败</p>';
+                distEl.innerHTML = '<p class="text-gray-500">推荐事件分布加载失败</p>';
+            });
+        }
+
+        // 加载热门视频列表
+        function loadTopVideos(videos) {
+            const container = document.getElementById('top-videos-list');
+            if (!container) {
+                console.error('找不到top-videos-list元素');
+                return;
+            }
+            
+            if (!videos || videos.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">暂无数据</p>';
+                return;
+            }
+            
+            console.log('热门视频数据:', videos);
+            
+            let html = '<div style="max-height: 400px; overflow-y: auto;">';
+            videos.forEach((video, index) => {
+                // 优先使用book_name，如果为空则使用video_name，如果video_name是文件名则格式化
+                let displayName = video.book_name || video.video_name || '未知视频';
+                
+                // 如果video_name看起来像文件名（包含扩展名），尝试使用book_name
+                if (!video.book_name && video.video_name && (video.video_name.includes('.mp4') || video.video_name.includes('.avi') || video.video_name.includes('.mov'))) {
+                    // 如果book_name为空，至少格式化一下文件名显示
+                    displayName = video.video_name.replace(/\.(mp4|avi|mov|wmv|flv)$/i, '');
+                }
+                
+                // 转义HTML防止XSS
+                displayName = displayName.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                // 使用author字段（书籍作者），如果没有则使用uploader_username（上传者）
+                const author = (video.author || video.uploader_username || '未知').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                
+                html += `
+                    <div style="padding: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600; color: #333;">${index + 1}. ${displayName}</div>
+                            <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                                作者: ${author} | 
+                                播放: ${video.views || 0} | 
+                                点赞: ${video.likes_count || 0} | 
+                                收藏: ${video.collections_count || 0}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // 加载视频上传趋势
+        function loadUploadTrend(trendData) {
+            const container = document.getElementById('upload-trend-container');
+            if (!container) {
+                console.error('找不到upload-trend-container元素');
+                return;
+            }
+            
+            if (!trendData || trendData.length === 0) {
+                container.innerHTML = '<p class="text-gray-500" style="text-align: center; padding: 40px;">暂无上传数据</p>';
+                return;
+            }
+            
+            // 生成最近7天的日期数组
+            const dates = [];
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                dates.push(date.toISOString().split('T')[0]);
+            }
+            
+            // 创建数据映射
+            const dataMap = {};
+            trendData.forEach(item => {
+                dataMap[item.date] = item.count;
+            });
+            
+            // 找到最大值用于计算高度比例
+            const maxCount = Math.max(...dates.map(date => dataMap[date] || 0), 1);
+            
+            let html = '<div style="display: flex; align-items: flex-end; justify-content: space-around; height: 250px; padding: 20px 0;">';
+            dates.forEach(date => {
+                const count = dataMap[date] || 0;
+                const height = maxCount > 0 ? (count / maxCount * 200) : 0;
+                const dateLabel = new Date(date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+                
+                html += `
+                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center; margin: 0 5px;">
+                        <div style="flex: 1; display: flex; align-items: flex-end; width: 100%; justify-content: center;">
+                            <div style="width: 80%; background: linear-gradient(to top, #1a73e8, #42a5f5); border-radius: 4px 4px 0 0; min-height: ${height}px; position: relative; transition: all 0.3s ease;" title="${date}: ${count}个视频">
+                                <div style="position: absolute; top: -25px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 600; color: #333;">${count}</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 12px; color: #666; text-align: center;">${dateLabel}</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // 加载最近注册用户
+        function loadRecentUsers(users) {
+            const container = document.getElementById('recent-users-container');
+            if (!container) {
+                console.error('找不到recent-users-container元素');
+                return;
+            }
+            
+            if (!users || users.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">暂无用户数据</p>';
+                return;
+            }
+            
+            let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
+            users.forEach((user, index) => {
+                const registerDate = user.created_at ? new Date(user.created_at).toLocaleDateString('zh-CN') : '未知';
+                const username = (user.username || '未知').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const email = (user.email || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                
+                html += `
+                    <div style="padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #1a73e8;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #333; margin-bottom: 4px;">${index + 1}. ${username}</div>
+                                <div style="font-size: 12px; color: #666;">${email || '无邮箱'}</div>
+                            </div>
+                            <div style="font-size: 12px; color: #999;">${registerDate}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // 加载视频作者分布
+        function loadAuthorDistribution(distribution) {
+            const container = document.getElementById('author-distribution-container');
+            if (!container) {
+                console.error('找不到author-distribution-container元素');
+                return;
+            }
+            
+            if (!distribution || distribution.length === 0) {
+                container.innerHTML = '<p class="text-gray-500">暂无数据</p>';
+                return;
+            }
+            
+            // 找到最大值用于计算宽度比例
+            const maxCount = Math.max(...distribution.map(item => item.count), 1);
+            
+            let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+            distribution.forEach((item, index) => {
+                const author = (item.author || '未知作者').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const count = item.count || 0;
+                const widthPercent = maxCount > 0 ? (count / maxCount * 100) : 0;
+                
+                html += `
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <span style="font-weight: 500; color: #333; font-size: 14px;">${index + 1}. ${author}</span>
+                            <span style="font-weight: 600; color: #1a73e8; font-size: 14px;">${count} 个视频</span>
+                        </div>
+                        <div style="width: 100%; height: 24px; background: #e3f2fd; border-radius: 12px; overflow: hidden; position: relative;">
+                            <div style="width: ${widthPercent}%; height: 100%; background: linear-gradient(to right, #1a73e8, #42a5f5); border-radius: 12px; transition: width 0.5s ease;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        async function adminFetchJson(url, options = {}) {
+            const token = localStorage.getItem('token');
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                ...(options.headers || {})
+            };
+            const resp = await fetch(url, { ...options, headers });
+            const data = await resp.json();
+            if (!resp.ok || !data.success) {
+                throw new Error(data.message || `请求失败(${resp.status})`);
+            }
+            return data;
+        }
+
+        function upsertSidebarBadge(target, count) {
+            const navItem = document.querySelector(`.sidebar-nav-item[data-target="${target}"]`);
+            if (!navItem) return;
+            let badge = navItem.querySelector('.sidebar-nav-badge');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'sidebar-nav-badge hidden';
+                navItem.appendChild(badge);
+            }
+            const n = Math.max(0, Number(count) || 0);
+            if (n <= 0) {
+                badge.classList.add('hidden');
+                badge.textContent = '';
+                return;
+            }
+            badge.classList.remove('hidden');
+            badge.textContent = n > 99 ? '99+' : String(n);
+        }
+
+        async function refreshSidebarNotifications() {
+            const jobs = await Promise.allSettled([
+                adminFetchJson('/api/admin/videos?status=pending'),
+                adminFetchJson('/api/admin/reports'),
+                adminFetchJson('/api/admin/shipping/exceptions'),
+                adminFetchJson('/api/admin/refunds?status=pending')
+            ]);
+            const pendingVideos = jobs[0].status === 'fulfilled' ? (Array.isArray(jobs[0].value.videos) ? jobs[0].value.videos.length : 0) : 0;
+            const reportedVideos = jobs[1].status === 'fulfilled' ? (Array.isArray(jobs[1].value.reports) ? jobs[1].value.reports.length : 0) : 0;
+            const shippingExceptions = jobs[2].status === 'fulfilled' ? (Array.isArray(jobs[2].value.orders) ? jobs[2].value.orders.length : 0) : 0;
+            const pendingRefunds = jobs[3].status === 'fulfilled' ? (Array.isArray(jobs[3].value.refunds) ? jobs[3].value.refunds.length : 0) : 0;
+            upsertSidebarBadge('pending-videos', pendingVideos);
+            upsertSidebarBadge('reported-videos', reportedVideos);
+            upsertSidebarBadge('shipping-exceptions', shippingExceptions);
+            upsertSidebarBadge('refund-management', pendingRefunds);
+        }
+
+        const SHIPPING_FLOW = ['pending', 'picked', 'in_transit', 'delivering', 'signed'];
+        const SHIPPING_LABELS = {
+            pending: '待揽收',
+            picked: '已揽收',
+            in_transit: '运输中',
+            delivering: '派送中',
+            signed: '已签收',
+            exception: '异常'
+        };
+
+        function computeNextShippingStatus(currentStatus) {
+            const cur = String(currentStatus || 'pending').trim();
+            if (cur === 'exception') return 'in_transit';
+            const idx = SHIPPING_FLOW.indexOf(cur);
+            if (idx < 0) return 'picked';
+            return SHIPPING_FLOW[Math.min(idx + 1, SHIPPING_FLOW.length - 1)];
+        }
+
+        function bindShippingActions() {
+            const table = document.getElementById('shipping-orders-table');
+            if (!table) return;
+            table.querySelectorAll('.table-action-btn[data-act="advance"]').forEach((btn) => {
+                const clone = btn.cloneNode(true);
+                btn.parentNode.replaceChild(clone, btn);
+                clone.addEventListener('click', async function() {
+                    const orderId = this.getAttribute('data-id');
+                    const currentStatus = this.getAttribute('data-current-status') || 'pending';
+                    const nextStatus = computeNextShippingStatus(currentStatus);
+                    const locationMap = {
+                        picked: '始发仓',
+                        in_transit: '区域分拨中心',
+                        delivering: '末端派送站',
+                        signed: '收货地址'
+                    };
+                    const contentMap = {
+                        picked: '包裹已揽收，准备发出',
+                        in_transit: '包裹运输中，已离开分拨中心',
+                        delivering: '包裹派送中，请保持电话畅通',
+                        signed: '包裹已签收，感谢使用'
+                    };
+                    const content = contentMap[nextStatus] || `物流状态更新为：${nextStatus}`;
+                    const location = locationMap[nextStatus] || '';
+                    try {
+                        let messageStatus = nextStatus;
+                        let autoPushed = false;
+                        try {
+                            await adminFetchJson(`/api/admin/orders/${orderId}/shipping`, {
+                                method: 'PUT',
+                                body: JSON.stringify({})
+                            });
+                            autoPushed = true;
+                        } catch (autoErr) {
+                            // 没有可推进路线节点时，回退到固定状态推进，避免“无效物流状态”
+                            const msg = String(autoErr?.message || '');
+                            if (!msg.includes('无效物流状态')) {
+                                throw autoErr;
+                            }
+                        }
+                        if (!autoPushed) {
+                            await adminFetchJson(`/api/admin/orders/${orderId}/shipping`, {
+                                method: 'PUT',
+                                body: JSON.stringify({ shipping_status: nextStatus, content, location })
+                            });
+                        }
+                        showToast(`物流已推进到「${SHIPPING_LABELS[messageStatus] || messageStatus}」`, 'success');
+                        loadShippingOrders();
+                    } catch (error) {
+                        showToast(error.message, 'error');
+                    }
+                });
+            });
+        }
+
+        function bindRefundActions() {
+            const table = document.getElementById('refund-table');
+            if (!table) return;
+            table.querySelectorAll('.table-action-btn[data-refund-act]').forEach((btn) => {
+                const clone = btn.cloneNode(true);
+                btn.parentNode.replaceChild(clone, btn);
+                clone.addEventListener('click', async function() {
+                    const id = this.getAttribute('data-id');
+                    const action = this.getAttribute('data-refund-act');
+                    const adminReply = prompt('请输入审核备注(可选):', action === 'approve' ? '同意退款' : '不满足退款条件') || '';
+                    try {
+                        await adminFetchJson(`/api/admin/refunds/${id}/review`, {
+                            method: 'PUT',
+                            body: JSON.stringify({ action, admin_reply: adminReply })
+                        });
+                        showToast(action === 'approve' ? '已通过退款申请' : '已驳回退款申请', 'success');
+                        loadRefundRequests();
+                    } catch (error) {
+                        showToast(error.message, 'error');
+                    }
+                });
+            });
+        }
+
+        async function loadShippingOrders() {
+            const tbody = document.getElementById('shipping-orders-table');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr class="loading"><td colspan="7" class="text-center"><div class="loading-spinner"></div>加载中...</td></tr>';
+            const status = (document.getElementById('shipping-status-filter')?.value || '').trim();
+            const query = status ? `?status=${encodeURIComponent(status)}` : '';
+            try {
+                const data = await adminFetchJson(`/api/admin/shipping/orders${query}`);
+                const rows = Array.isArray(data.orders) ? data.orders : [];
+                if (!rows.length) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-500">暂无物流订单</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = rows.map((o) => `
+                    <tr class="table-hover-row">
+                        <td>${o.order_no || ('#' + o.id)}</td>
+                        <td>${o.user_id}</td>
+                        <td>${o.status || '-'}</td>
+                        <td>${SHIPPING_LABELS[o.shipping_status] || o.shipping_status || '-'}</td>
+                        <td>${o.eta_at || '-'}</td>
+                        <td>${o.shipping_exception_code || '-'}</td>
+                        <td>
+                            ${['refunded', 'cancelled'].includes(String(o.status || ''))
+                                ? '<button class="table-action-btn" style="background:#d1d5db;color:#6b7280;cursor:not-allowed;" disabled>已结束</button>'
+                                : `<button class="table-action-btn approve" data-act="advance" data-current-status="${o.shipping_status || ''}" data-id="${o.id}">一键推进</button>`}
+                        </td>
+                    </tr>
+                `).join('');
+                bindShippingActions();
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">${error.message}</td></tr>`;
+            }
+        }
+
+        async function loadShippingExceptions() {
+            const tbody = document.getElementById('shipping-exceptions-table');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr class="loading"><td colspan="6" class="text-center"><div class="loading-spinner"></div>加载中...</td></tr>';
+            try {
+                const data = await adminFetchJson('/api/admin/shipping/exceptions');
+                const rows = Array.isArray(data.orders) ? data.orders : [];
+                if (!rows.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-gray-500">暂无异常物流</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = rows.map((o) => `
+                    <tr class="table-hover-row">
+                        <td>${o.order_no || ('#' + o.id)}</td>
+                        <td>${o.user_id}</td>
+                        <td>${o.shipping_exception_code || '-'}</td>
+                        <td>${o.shipping_exception_text || '-'}</td>
+                        <td>${o.shipping_delay_minutes || 0}</td>
+                        <td>${o.updated_at || '-'}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">${error.message}</td></tr>`;
+            }
+        }
+
+        async function loadRefundRequests() {
+            const tbody = document.getElementById('refund-table');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr class="loading"><td colspan="7" class="text-center"><div class="loading-spinner"></div>加载中...</td></tr>';
+            const status = (document.getElementById('refund-status-filter')?.value || '').trim();
+            const query = status ? `?status=${encodeURIComponent(status)}` : '';
+            try {
+                const data = await adminFetchJson(`/api/admin/refunds${query}`);
+                const rows = Array.isArray(data.refunds) ? data.refunds : [];
+                if (!rows.length) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-gray-500">暂无退款申请</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = rows.map((r) => `
+                    <tr class="table-hover-row">
+                        <td>${r.id}</td>
+                        <td>${r.order_no || ('#' + r.order_id)}</td>
+                        <td>${r.username || ('U' + r.user_id)}</td>
+                        <td>¥${Number(r.request_amount || 0).toFixed(2)}</td>
+                        <td>${(r.reason_text || r.reason_code || '-')}</td>
+                        <td>${r.status}</td>
+                        <td>
+                            ${r.status === 'pending'
+                                ? `<div class="table-actions">
+                                    <button class="table-action-btn approve" data-refund-act="approve" data-id="${r.id}">通过</button>
+                                    <button class="table-action-btn reject" data-refund-act="reject" data-id="${r.id}">驳回</button>
+                                   </div>`
+                                : '-'}
+                        </td>
+                    </tr>
+                `).join('');
+                bindRefundActions();
+            } catch (error) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">${error.message}</td></tr>`;
+            }
+        }
+
+        // 绑定评论搜索和刷新按钮
+        document.addEventListener('DOMContentLoaded', function() {
+            const commentSearchBtn = document.getElementById('comment-search-btn');
+            const commentRefreshBtn = document.getElementById('comment-refresh-btn');
+            const commentSearchInput = document.getElementById('comment-search-input');
+            
+            if (commentSearchBtn) {
+                commentSearchBtn.addEventListener('click', function() {
+                    commentSearchKeyword = commentSearchInput.value;
+                    loadComments(1, commentSearchKeyword);
+                });
+            }
+            
+            if (commentRefreshBtn) {
+                commentRefreshBtn.addEventListener('click', function() {
+                    commentSearchKeyword = '';
+                    commentSearchInput.value = '';
+                    loadComments(1, '');
+                });
+            }
+            
+            if (commentSearchInput) {
+                commentSearchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        commentSearchKeyword = commentSearchInput.value;
+                        loadComments(1, commentSearchKeyword);
+                    }
+                });
+            }
+            
+            // 评论分页按钮
+            const commentsPrevBtn = document.getElementById('comments-prev-btn');
+            const commentsNextBtn = document.getElementById('comments-next-btn');
+            
+            if (commentsPrevBtn) {
+                commentsPrevBtn.addEventListener('click', function() {
+                    if (currentCommentPage > 1) {
+                        loadComments(currentCommentPage - 1, commentSearchKeyword);
+                    }
+                });
+            }
+            
+            if (commentsNextBtn) {
+                commentsNextBtn.addEventListener('click', function() {
+                    loadComments(currentCommentPage + 1, commentSearchKeyword);
+                });
+            }
+
+            const shippingFilterBtn = document.getElementById('shipping-filter-btn');
+            const shippingRefreshBtn = document.getElementById('shipping-refresh-btn');
+            const shippingExceptionRefreshBtn = document.getElementById('shipping-exceptions-refresh-btn');
+            const refundFilterBtn = document.getElementById('refund-filter-btn');
+            const refundRefreshBtn = document.getElementById('refund-refresh-btn');
+            if (shippingFilterBtn) shippingFilterBtn.addEventListener('click', () => loadShippingOrders());
+            if (shippingRefreshBtn) shippingRefreshBtn.addEventListener('click', () => loadShippingOrders());
+            if (shippingExceptionRefreshBtn) shippingExceptionRefreshBtn.addEventListener('click', () => loadShippingExceptions());
+            if (refundFilterBtn) refundFilterBtn.addEventListener('click', () => loadRefundRequests());
+            if (refundRefreshBtn) refundRefreshBtn.addEventListener('click', () => loadRefundRequests());
+            const bookSearchBtn = document.getElementById('book-search-btn');
+            const bookRefreshBtn = document.getElementById('book-refresh-btn');
+            const bookCreateBtn = document.getElementById('book-create-btn');
+            const bookSearchInput = document.getElementById('book-search-input');
+            if (bookSearchBtn) {
+                bookSearchBtn.addEventListener('click', () => {
+                    bookManagementKeyword = String(bookSearchInput?.value || '').trim();
+                    loadBookManagementList();
+                });
+            }
+            if (bookRefreshBtn) {
+                bookRefreshBtn.addEventListener('click', () => {
+                    bookManagementKeyword = '';
+                    if (bookSearchInput) bookSearchInput.value = '';
+                    loadBookManagementList();
+                });
+            }
+            if (bookSearchInput) {
+                bookSearchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        bookManagementKeyword = String(bookSearchInput.value || '').trim();
+                        loadBookManagementList();
+                    }
+                });
+            }
+            if (bookCreateBtn) {
+                bookCreateBtn.addEventListener('click', () => {
+                    openBookCreateModal();
+                });
+            }
+        });
+
+        // 绑定举报相关的操作按钮事件（仅用于被举报视频表格）
+        function bindReportActionButtons() {
+            const table = document.getElementById('reported-videos-table');
+            if (!table) return;
+            
+            // 预览按钮
+            table.querySelectorAll('.table-action-btn.view').forEach(btn => {
+                // 移除旧的事件监听器
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                newBtn.addEventListener('click', function() {
+                    const videoId = this.getAttribute('data-id');
+                    const videoUrl = this.getAttribute('data-url');
+                    const reportId = this.getAttribute('data-report-id');
+                    
+                    // 从当前表格行获取视频信息
+                    const row = this.closest('tr');
+                    if (row) {
+                        const videoName = row.cells[1]?.textContent || '';
+                        const author = row.cells[2]?.textContent || '';
+                        
+                        const video = {
+                            id: videoId,
+                            url: videoUrl,
+                            video_url: videoUrl,
+                            title: videoName,
+                            video_name: videoName,
+                            author: author,
+                            description: ''
+                        };
+                        
+                        // 获取举报信息
+                        const reportReasonCell = row.cells[4];
+                        if (reportReasonCell) {
+                            const reasonText = reportReasonCell.querySelector('div')?.textContent || '';
+                            video.reportReason = reasonText.replace('举报原因:', '').trim();
+                            const noteText = reportReasonCell.querySelector('div:nth-child(2)')?.textContent || '';
+                            if (noteText) {
+                                video.reportNote = noteText.replace('详细说明:', '').trim();
+                            }
+                            const reporterText = reportReasonCell.querySelector('div:nth-child(3)')?.textContent || '';
+                            video.reporter = reporterText.replace('举报人:', '').trim();
+                            const reportTimeText = reportReasonCell.querySelector('div:nth-child(4)')?.textContent || '';
+                            video.reportTime = reportTimeText.replace('举报时间:', '').trim();
+                        }
+                        
+                        if (video.url || video.video_url) {
+                            openModal(video);
+                        } else {
+                            showToast('无法获取视频URL', 'error');
+                        }
+                    }
+                });
+            });
+            
+            // 下架按钮
+            table.querySelectorAll('.table-action-btn.danger[data-action="ban"]').forEach(btn => {
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                newBtn.addEventListener('click', function() {
+                    const reportId = this.getAttribute('data-id');
+                    const videoId = this.getAttribute('data-video-id');
+                    
+                    if (confirm('确定要下架该视频吗？下架后该视频将从图书广场移除，但在个人中心仍然可见。')) {
+                        handleReportAction(reportId, 'ban', videoId);
+                    }
+                });
+            });
+            
+            // 忽略按钮
+            table.querySelectorAll('.table-action-btn.secondary[data-action="ignore"]').forEach(btn => {
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                newBtn.addEventListener('click', function() {
+                    const reportId = this.getAttribute('data-id');
+                    
+                    if (confirm('确定要忽略该举报吗？视频将继续正常显示。')) {
+                        handleReportAction(reportId, 'ignore');
+                    }
+                });
+            });
+        }
+        
+        // 处理举报操作
+        function handleReportAction(reportId, action, videoId) {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showToast('请先登录', 'error');
+                return;
+            }
+            
+            fetch(`/api/admin/reports/${reportId}/handle`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action: action })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showToast(result.message || '操作成功', 'success');
+                    // 重新加载举报列表
+                    loadReportedVideos();
+                } else {
+                    showToast(result.message || '操作失败', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('处理举报失败:', error);
+                showToast('网络错误，请稍后重试', 'error');
+            });
+        }
+
+        let bookManagementKeyword = '';
+        async function loadBookManagementList() {
+            const tbody = document.getElementById('book-management-table');
+            if (!tbody) return;
+            const token = localStorage.getItem('token');
+            if (!token) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">请先登录管理员账号</td></tr>`;
+                return;
+            }
+            try {
+                const q = new URLSearchParams();
+                q.set('page', '1');
+                q.set('limit', '200');
+                if (bookManagementKeyword.trim()) q.set('search', bookManagementKeyword.trim());
+                const resp = await fetch(`/api/admin/books?${q.toString()}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await resp.json();
+                if (!resp.ok || !data.success) throw new Error(data.message || '加载图书失败');
+                const books = Array.isArray(data.books) ? data.books : [];
+                if (!books.length) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center">暂无图书数据</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = books.map((book) => {
+                    const status = String(book.shelf_status || 'on_sale');
+                    const statusText = status === 'on_sale' ? '已上架' : '已下架';
+                    return `
+                        <tr class="table-hover-row">
+                            <td>${book.id}</td>
+                            <td>${book.title || ''}</td>
+                            <td>${book.author || ''}</td>
+                            <td>${book.category || ''}</td>
+                            <td>¥${Number(book.price || 0).toFixed(2)}</td>
+                            <td>${statusText}</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="table-action-btn secondary" data-book-edit="${book.id}">编辑</button>
+                                    <button class="table-action-btn ${status === 'on_sale' ? 'danger' : 'success'}" data-book-shelf="${book.id}" data-next-status="${status === 'on_sale' ? 'off_shelf' : 'on_sale'}">
+                                        ${status === 'on_sale' ? '下架' : '上架'}
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                bindBookManagementActions(books);
+            } catch (error) {
+                console.error('加载图书管理列表失败:', error);
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">${error.message || '加载失败'}</td></tr>`;
+            }
+        }
+
+        function bindBookManagementActions(books) {
+            const table = document.getElementById('book-management-table');
+            if (!table) return;
+            const map = new Map((books || []).map((b) => [String(b.id), b]));
+            table.querySelectorAll('[data-book-shelf]').forEach((btn) => {
+                btn.addEventListener('click', async function() {
+                    const id = this.getAttribute('data-book-shelf');
+                    const nextStatus = this.getAttribute('data-next-status');
+                    const token = localStorage.getItem('token');
+                    if (!token) return showToast('请先登录', 'error');
+                    const tip = nextStatus === 'on_sale' ? '确定上架该图书吗？' : '确定下架该图书吗？';
+                    if (!confirm(tip)) return;
+                    try {
+                        const resp = await fetch(`/api/admin/books/${id}/shelf`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ shelf_status: nextStatus })
+                        });
+                        const data = await resp.json();
+                        if (!resp.ok || !data.success) throw new Error(data.message || '更新失败');
+                        showToast(data.message || '状态已更新', 'success');
+                        loadBookManagementList();
+                    } catch (error) {
+                        showToast(error.message || '更新失败', 'error');
+                    }
+                });
+            });
+            table.querySelectorAll('[data-book-edit]').forEach((btn) => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-book-edit');
+                    const book = map.get(String(id));
+                    if (!book) return;
+                    openBookEditModal(book);
+                });
+            });
+        }
+
+        // 重写bindActionButtons，仅用于待审核/已通过/已拒绝视频表格
+        function bindActionButtons() {
+            // 只绑定到特定表格中的按钮（排除被举报视频表格）
+            const tables = ['pending-videos-table', 'approved-videos-table', 'rejected-videos-table'];
+            
+            tables.forEach(tableId => {
+                const table = document.getElementById(tableId);
+                if (!table) return;
+                
+                // 预览按钮
+                table.querySelectorAll('.table-action-btn.view').forEach(btn => {
+                    // 移除旧的事件监听器（通过克隆节点）
+                    const newBtn = btn.cloneNode(true);
+                    btn.parentNode.replaceChild(newBtn, btn);
+                    
+                    newBtn.addEventListener('click', function() {
+                        const videoId = this.getAttribute('data-id');
+                        const videoUrl = this.getAttribute('data-url');
+                        
+                        // 从服务器获取视频详细信息
+                        const token = localStorage.getItem('token');
+                        if (token && videoId) {
+                            // 尝试从当前表格行获取视频信息
+                            const row = this.closest('tr');
+                            if (row) {
+                                const videoName = row.cells[1]?.textContent || '';
+                                const author = row.cells[2]?.textContent || '';
+                                const uploadTime = row.cells[3]?.textContent || '';
+                                const duration = row.cells[4]?.textContent || '';
+                                
+                                // 构建视频对象，确保字段名匹配openModal的期望
+                                const video = {
+                                    id: videoId,
+                                    url: videoUrl,
+                                    video_url: videoUrl,
+                                    title: videoName,
+                                    video_name: videoName,
+                                    author: author,
+                                    created_at: uploadTime,
+                                    duration: duration,
+                                    description: ''
+                                };
+                                
+                                // 确保视频URL存在
+                                if (video.url || video.video_url) {
+                                    openModal(video);
+                                } else {
+                                    console.error('视频URL不存在');
+                                    showToast('无法获取视频URL', 'error');
+                                }
+                            } else {
+                                console.error('无法找到视频行数据');
+                                showToast('无法获取视频信息', 'error');
+                            }
+                        } else {
+                            console.error('缺少token或视频ID');
+                            showToast('无法预览视频', 'error');
+                        }
+                    });
+                });
+                
+                // 通过按钮
+                table.querySelectorAll('.table-action-btn.approve').forEach(btn => {
+                    const newBtn = btn.cloneNode(true);
+                    btn.parentNode.replaceChild(newBtn, btn);
+                    
+                    newBtn.addEventListener('click', function() {
+                        const videoId = this.getAttribute('data-id');
+                        if (confirm('确定要通过这个视频吗？')) {
+                            handleVideoApproval(videoId, 'approved');
+                        }
+                    });
+                });
+                
+                // 拒绝按钮
+                table.querySelectorAll('.table-action-btn.reject').forEach(btn => {
+                    const newBtn = btn.cloneNode(true);
+                    btn.parentNode.replaceChild(newBtn, btn);
+                    
+                    newBtn.addEventListener('click', function() {
+                        const videoId = this.getAttribute('data-id');
+                        if (confirm('确定要拒绝这个视频吗？')) {
+                            handleVideoApproval(videoId, 'rejected');
+                        }
+                    });
+                });
+            });
+        }
+
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查登录状态
+            checkLoginStatus();
+            
+            // 初始化URL参数
+            initFromUrlParams();
+            
+            // 默认显示数据分析页面
+            document.querySelectorAll('.sidebar-nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            const dashboardItem = document.querySelector('.sidebar-nav-item[data-target="dashboard"]');
+            if (dashboardItem) {
+                dashboardItem.classList.add('active');
+                document.getElementById('dashboard-section').classList.remove('hidden');
+                loadDashboardStats();
+            } else {
+                // 如果没有找到数据分析按钮，则显示用户列表（兼容性）
+                document.querySelector('.sidebar-nav-item[data-target="user-list"]').classList.add('active');
+                document.getElementById('user-list-section').classList.remove('hidden');
+                loadUsers();
+            }
+
+            refreshSidebarNotifications().catch(() => {});
+            setInterval(() => {
+                refreshSidebarNotifications().catch(() => {});
+            }, 15000);
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    refreshSidebarNotifications().catch(() => {});
+                }
+            });
+        });
+    </script>
+</body>
+</html>

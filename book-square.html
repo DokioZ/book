@@ -1,0 +1,2972 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://*; connect-src 'self' http://localhost:* https://* https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://*; style-src 'self' 'unsafe-inline' https://*; img-src 'self' data: http://localhost:* https://*; media-src 'self' blob: http://localhost:* https://*;">
+        <title>图书智能宣传系统 - 图书广场</title>
+        <script src="/static/lib/echarts.min.js"></script>
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            overflow-x: hidden;
+        }
+        
+        /* 主容器 */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* 顶部导航栏 */
+        header {
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a73e8;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo-icon {
+            font-size: 32px;
+            margin-right: 10px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav-link {
+            text-decoration: none;
+            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-link:hover,
+        .nav-link.active {
+            color: #1a73e8;
+        }
+        
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .search-btn, .cart-btn, .user-btn, .login-btn, .register-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #333;
+            cursor: pointer;
+            transition: color 0.3s;
+            padding: 8px;
+            border-radius: 50%;
+        }
+        
+        .search-btn:hover, .cart-btn:hover, .user-btn:hover {
+            background-color: #f0f0f0;
+            color: #1a73e8;
+        }
+        
+        .login-btn, .register-btn {
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        
+        .login-btn {
+            color: #1a73e8;
+            background-color: transparent;
+        }
+        
+        .register-btn {
+            color: #fff;
+            background-color: #1a73e8;
+        }
+        
+        /* 页面标题 */
+        .page-title {
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .page-title h1 {
+            font-size: 36px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .page-title p {
+            font-size: 16px;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* 内容区域 */
+        .content-wrapper {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+        
+        /* 左侧视频列表 */
+        .videos-section {
+            background-color: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* 分类标签 */
+        .category-tabs {
+            display: flex;
+            overflow-x: auto;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding-bottom: 10px;
+            scrollbar-width: none;
+        }
+        
+        .category-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .category-tab {
+            padding: 8px 20px;
+            background-color: #f0f0f0;
+            border-radius: 20px;
+            border: none;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        
+        .category-tab:hover,
+        .category-tab.active {
+            background-color: #1a73e8;
+            color: #fff;
+        }
+        
+        /* 视频网格 */
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        /* 视频卡片 */
+        .video-card {
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #fff;
+            border: 1px solid #f0f0f0;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 视频卡片高亮效果 */
+        .video-card.video-highlight {
+            border: 2px solid #1a73e8;
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+            animation: highlight-pulse 2s ease-in-out;
+        }
+        
+        @keyframes highlight-pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 0 6px rgba(26, 115, 232, 0.3);
+            }
+        }
+        
+        .video-thumbnail {
+            position: relative;
+            aspect-ratio: 16 / 9;
+            overflow: hidden;
+            background-color: #000;
+        }
+        
+        .video-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        
+        .video-card:hover .video-thumbnail img {
+            transform: scale(1.05);
+        }
+        
+        .video-duration {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        
+        .video-play-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        
+        .video-card:hover .video-play-btn {
+            opacity: 1;
+        }
+        
+        .video-play-btn i {
+            color: #fff;
+            font-size: 24px;
+            margin-left: 3px;
+        }
+        
+        .video-info {
+            padding: 15px;
+        }
+        
+        .video-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .video-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .book-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .book-info i {
+            color: #1a73e8;
+        }
+        
+        .video-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .user-avatar-small {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        .user-avatar-small img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .user-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .user-name, .username {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .video-stats {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            font-size: 14px;
+            color: #666;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        
+        .stat-item:hover {
+            color: #1a73e8;
+            background-color: #f0f5ff;
+        }
+        
+        .stat-item i {
+            font-size: 16px;
+        }
+        
+        .stat-item.liked {
+            color: #ff4757;
+        }
+        
+        .stat-item.liked:hover {
+            background-color: #fff0f0;
+        }
+        
+        .stat-item.collected {
+            color: #ff9f43;
+        }
+        
+        .stat-item.collected:hover {
+            background-color: #fff8f0;
+        }
+        
+        .stat-item.report {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 14px;
+            color: #999;
+            cursor: pointer;
+        }
+        
+        .stat-item.report:hover {
+            color: #ff4757;
+            background-color: #fff0f0;
+        }
+        
+        .stat-item span:not(.like-count):not(.collect-count):not(.comment-count) {
+            font-size: 14px;
+            margin-left: 2px;
+        }
+        
+        /* 加载更多按钮 */
+        .load-more {
+            margin-top: 40px;
+            text-align: center;
+        }
+        
+        .load-more-btn {
+            padding: 12px 30px;
+            background-color: #f0f0f0;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .load-more-btn:hover {
+            background-color: #1a73e8;
+            color: #fff;
+        }
+        
+        /* 右侧边栏 */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        /* 发布视频卡片 */
+        .publish-card {
+            background-color: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+        
+        .publish-card h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .publish-card p {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 25px;
+        }
+        
+        .create-video-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: #1a73e8;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+        }
+        
+        .create-video-btn:hover {
+            background-color: #1557b0;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(26, 115, 232, 0.3);
+        }
+        
+        /* 热门推荐 */
+        .trending-section {
+            background-color: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .trending-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .trending-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .trending-item {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            transition: all 0.3s;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .trending-item:hover {
+            background-color: #f0f5ff;
+        }
+        
+        .trending-rank {
+            width: 30px;
+            height: 30px;
+            background-color: #1a73e8;
+            color: #fff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        .trending-rank.top {
+            background-color: #ff4757;
+        }
+        
+        .trending-rank.second {
+            background-color: #ff9f43;
+        }
+        
+        .trending-rank.third {
+            background-color: #2ed573;
+        }
+        
+        .trending-thumbnail {
+            width: 80px;
+            height: 45px;
+            border-radius: 8px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        .trending-thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .trending-info {
+            flex: 1;
+        }
+        
+        .trending-book-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .trending-views {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        /* 智能推荐 */
+        .ai-recommendations {
+            background-color: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .recommendations-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .reco-source-hint {
+            font-size: 12px;
+            color: #6b7280;
+            background: #f3f4f6;
+            border-radius: 999px;
+            padding: 3px 10px;
+            margin-bottom: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .recommendations-chart {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 20px;
+        }
+        
+        .ai-tag-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .ai-tag {
+            padding: 8px 16px;
+            background-color: #f0f0f0;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .ai-tag:hover {
+            background-color: #1a73e8;
+            color: #fff;
+        }
+        
+        .reco-item {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            border: 1px solid #f0f0f0;
+            border-radius: 10px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fff;
+        }
+        
+        .reco-item:hover {
+            background-color: #f8fbff;
+            border-color: #dbeafe;
+            transform: translateY(-1px);
+        }
+        
+        .reco-cover {
+            width: 54px;
+            height: 72px;
+            object-fit: cover;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+        
+        .reco-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .reco-meta {
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .reco-badges {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 5px;
+            flex-wrap: wrap;
+        }
+
+        .reco-actions {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .reco-action-btn {
+            border: 1px solid #dbe3ef;
+            background: #fff;
+            color: #475569;
+            border-radius: 999px;
+            padding: 3px 10px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .reco-action-btn:hover {
+            border-color: #93c5fd;
+            color: #1d4ed8;
+        }
+        
+        .reco-reason {
+            font-size: 11px;
+            color: #1a73e8;
+        }
+        
+        .reco-strategy {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            color: #fff;
+            border-radius: 999px;
+            padding: 2px 8px;
+            line-height: 1.3;
+        }
+        
+        .reco-strategy.cf {
+            background: #7c3aed;
+        }
+        
+        .reco-strategy.content {
+            background: #0ea5e9;
+        }
+        
+        .reco-strategy.hot {
+            background: #f97316;
+        }
+        
+        .reco-strategy.fresh {
+            background: #10b981;
+        }
+        
+        /* 页脚 */
+        footer {
+            background-color: #333;
+            color: #fff;
+            padding: 40px 0;
+            margin-top: 60px;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+        
+        .footer-column h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .footer-column ul {
+            list-style: none;
+        }
+        
+        .footer-column li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-column a {
+            color: #ccc;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-column a:hover {
+            color: #fff;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            margin-top: 30px;
+            border-top: 1px solid #555;
+            color: #999;
+            font-size: 14px;
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 1024px) {
+            .content-wrapper {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                order: -1;
+            }
+            
+            .trending-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            
+            .page-title h1 {
+                font-size: 28px;
+            }
+            
+            .videos-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .category-tabs {
+                margin-bottom: 20px;
+            }
+        }
+        
+        /* 底部导航栏 - 移动端 */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            border-top: 1px solid #f0f0f0;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 900;
+        }
+        
+        .mobile-nav-items {
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #666;
+            text-decoration: none;
+        }
+        
+        .mobile-nav-item.active {
+            color: #1a73e8;
+        }
+        
+        .mobile-nav-icon {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        
+        .mobile-nav-text {
+            font-size: 12px;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-nav {
+                display: block;
+            }
+        }
+        
+        /* 举报模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-modal:hover {
+            color: #333;
+        }
+        
+        .report-reasons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .report-reason {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            border: 2px solid #f0f0f0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .report-reason:hover,
+        .report-reason.selected {
+            border-color: #1a73e8;
+            background-color: #f0f5ff;
+        }
+        
+        .report-reason input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            accent-color: #1a73e8;
+        }
+        
+        .report-reason label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .report-note {
+            margin-bottom: 20px;
+        }
+        
+        .report-note textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .report-submit {
+            width: 100%;
+            padding: 12px;
+            background-color: #1a73e8;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .report-submit:hover {
+            background-color: #1557b0;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header>
+        <div class="container header-content">
+            <a href="index.html" class="logo">
+                <i class="iconfont icon-book logo-icon"></i>
+                <span>图书智能宣传系统</span>
+            </a>
+            
+            <nav class="nav-links">
+                <a href="bookstore.html" class="nav-link">图书商店</a>
+                <a href="create-video.html" class="nav-link">生成视频</a>
+                <a href="book-square.html" class="nav-link active">图书广场</a>
+                <a href="user-center.html" class="nav-link">个人中心</a>
+                <a href="cart.html" class="nav-link">我的购物车</a>
+                <a href="orders.html" class="nav-link">我的订单</a>
+            </nav>
+            
+            <div class="user-actions">
+                <a href="cart.html" class="cart-btn" style="text-decoration: none; display: inline-block;"><i class="iconfont icon-shopping-cart"></i></a>
+                <button class="user-btn"><i class="iconfont icon-user"></i></button>
+                <button class="login-btn">登录</button>
+                <button class="register-btn">注册</button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 页面标题 -->
+    <div class="page-title">
+        <h1>图书广场</h1>
+        <p>发现精彩的图书视频，与全球书友分享阅读的乐趣</p>
+    </div>
+    
+    <div class="container">
+        <!-- 内容区域 -->
+        <div class="content-wrapper">
+            <!-- 左侧视频列表 -->
+            <div class="videos-section">
+                <!-- 分类标签 -->
+                <div class="category-tabs">
+                    <button class="category-tab active">推荐</button>
+                    <button class="category-tab">科幻</button>
+                    <button class="category-tab">文学</button>
+                    <button class="category-tab">历史</button>
+                    <button class="category-tab">哲学</button>
+                    <button class="category-tab">经济</button>
+                    <button class="category-tab">艺术</button>
+                    <button class="category-tab">教育</button>
+                    <button class="category-tab">医学</button>
+                    <button class="category-tab">科技</button>
+                    <button class="category-tab">生活</button>
+                </div>
+                
+                <!-- 视频网格 -->
+                <div class="videos-grid" id="videosGrid">
+                    <!-- 初始状态显示 -->
+                    <div class="empty-state" id="emptyVideosState">
+                        <i class="iconfont icon-video"></i>
+                        <h3>暂无视频内容</h3>
+                        <p>视频将在管理员审核通过后显示在这里</p>
+                    </div>
+                </div>
+                
+                <script>
+                    // 全局函数：显示提示信息
+                    function showToast(message, type = 'info') {
+                        // 创建提示元素
+                        const toast = document.createElement('div');
+                        toast.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; color: white; font-size: 14px; max-width: 300px; word-wrap: break-word; animation: slideIn 0.3s ease-out;';
+                        
+                        // 设置不同类型的样式
+                        if (type === 'success') {
+                            toast.style.backgroundColor = '#10b981';
+                        } else if (type === 'error') {
+                            toast.style.backgroundColor = '#ef4444';
+                        } else if (type === 'info') {
+                            toast.style.backgroundColor = '#3b82f6';
+                        } else {
+                            toast.style.backgroundColor = '#6b7280';
+                        }
+                        
+                        toast.innerHTML = message;
+                        
+                        // 添加到页面
+                        document.body.appendChild(toast);
+                        
+                        // 自动关闭
+                        setTimeout(() => {
+                            toast.style.animation = 'slideOut 0.3s ease-in';
+                            setTimeout(() => {
+                                if (toast.parentNode) {
+                                    document.body.removeChild(toast);
+                                }
+                            }, 300);
+                        }, 3000);
+                    }
+                    
+                    // 添加动画样式
+                    if (!document.getElementById('toast-animation-style')) {
+                        const style = document.createElement('style');
+                        style.id = 'toast-animation-style';
+                        style.textContent = `
+                            @keyframes slideIn {
+                                from {
+                                    transform: translateX(100%);
+                                    opacity: 0;
+                                }
+                                to {
+                                    transform: translateX(0);
+                                    opacity: 1;
+                                }
+                            }
+                            @keyframes slideOut {
+                                from {
+                                    transform: translateX(0);
+                                    opacity: 1;
+                                }
+                                to {
+                                    transform: translateX(100%);
+                                    opacity: 0;
+                                }
+                            }
+                        `;
+                        document.head.appendChild(style);
+                    }
+                    
+                    // 页面加载后请求视频数据
+                    // 获取URL参数
+                    function getUrlParams() {
+                        const params = {};
+                        const queryString = window.location.search.substring(1);
+                        const pairs = queryString.split('&');
+                        for (let i = 0; i < pairs.length; i++) {
+                            const pair = pairs[i].split('=');
+                            const key = decodeURIComponent(pair[0]);
+                            const value = decodeURIComponent(pair[1] || '');
+                            params[key] = value;
+                        }
+                        return params;
+                    }
+
+                    // 检查URL中的视频参数并滚动到对应视频
+                    function scrollToVideoFromUrl() {
+                        const params = getUrlParams();
+                        if (params.videoId) {
+                            // 等待视频加载完成后再滚动
+                            setTimeout(() => {
+                                const videoCard = document.querySelector(`[data-video-id="${params.videoId}"]`);
+                                if (videoCard) {
+                                    videoCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    // 添加高亮效果
+                                    videoCard.classList.add('video-highlight');
+                                    setTimeout(() => {
+                                        videoCard.classList.remove('video-highlight');
+                                    }, 2000);
+                                } else {
+                                    showToast('未找到指定的视频', 'error');
+                                }
+                            }, 1000);
+                        }
+                    }
+                    
+                    document.addEventListener('DOMContentLoaded', function() {
+                        loadApprovedVideos();
+                        
+                        // 检查URL参数并滚动到对应视频
+                        scrollToVideoFromUrl();
+                    });
+                    
+                    // 加载已审核通过的视频
+        function loadApprovedVideos() {
+            try {
+                const videosGrid = document.getElementById('videosGrid');
+                
+                // 确保视频网格容器存在
+                if (!videosGrid) {
+                    console.error('视频网格容器不存在');
+                    return;
+                }
+                
+                // 清空视频网格并显示加载状态
+                videosGrid.innerHTML = `
+                    <div class="loading-container">
+                        <div class="loading-spinner"></div>
+                        <div class="loading-text">加载视频中...</div>
+                    </div>
+                `;
+                
+                // 调用服务器API获取已审核视频列表（包含用户token以获取点赞/收藏状态）
+                const token = localStorage.getItem('token');
+                const headers = {};
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+                
+                fetch('/api/videos', {
+                    headers: headers
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('网络请求失败: ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // 清空视频网格
+                        videosGrid.innerHTML = '';
+                        
+                        if (data.success && Array.isArray(data.videos)) {
+                            const approvedVideos = data.videos;
+                            
+                            // 如果没有已通过审核的视频，显示空状态
+                            if (approvedVideos.length === 0) {
+                                const emptyState = document.createElement('div');
+                                emptyState.className = 'empty-state';
+                                emptyState.innerHTML = `
+                                    <div class="empty-icon">
+                                        <i class="iconfont icon-video-empty"></i>
+                                    </div>
+                                    <div class="empty-text">暂无视频内容</div>
+                                    <div class="empty-hint">成为第一个分享读书视频的人吧！</div>
+                                `;
+                                videosGrid.appendChild(emptyState);
+                                return;
+                            }
+                            
+                            // 创建视频卡片
+                            approvedVideos.forEach(video => {
+                                // 转换视频数据格式以匹配createVideoCard的期望
+                                const videoData = {
+                                    id: video.id,
+                                    name: video.video_name, // 使用name而不是title，因为createVideoCard函数期望video.name
+                                    title: video.video_name, // 保留title属性以确保兼容性
+                                    book_id: video.book_id || 0,
+                                    book_title: video.book_title || '',
+                                    book_name: video.book_name || '',
+                                    author: video.author,
+                                    uploadTime: video.created_at,
+                                    duration: video.duration || '00:00',
+                                    status: video.status,
+                                    // 设置视频源URL
+                                    tempUrl: video.video_url,
+                                    // 添加上传用户信息
+                                    uploadUser: video.upload_user,
+                                    // 添加点赞、收藏、评论数据
+                                    is_liked: video.is_liked || false,
+                                    is_collected: video.is_collected || false,
+                                    likes_count: video.likes_count || 0,
+                                    collections_count: video.collections_count || 0,
+                                    comments_count: video.comments_count || 0
+                                };
+                                
+                                const videoCard = createVideoCard(videoData);
+                                videosGrid.appendChild(videoCard);
+                            });
+                        } else {
+                            throw new Error('获取视频数据失败: ' + (data.message || '未知错误'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('加载视频失败:', error);
+                        videosGrid.innerHTML = `
+                            <div class="error-state">
+                                <div class="error-icon">
+                                    <i class="iconfont icon-error"></i>
+                                </div>
+                                <div class="error-text">加载视频失败</div>
+                                <div class="error-hint">${error.message}</div>
+                                <button class="retry-button" onclick="loadApprovedVideos()">重试</button>
+                            </div>
+                        `;
+                        showToast('加载视频失败，请稍后再试', 'error');
+                    });
+            } catch (error) {
+                console.error('加载视频异常:', error);
+                showToast('加载视频异常，请稍后再试', 'error');
+            }
+        }
+        
+        // 创建视频卡片
+        // 统一的视频占位图ID生成函数（确保同一视频在不同页面显示相同图片）
+        function getVideoThumbnailId(videoId) {
+            if (!videoId) return 24;
+            const idNum = parseInt(videoId) || 0;
+            // 使用视频ID生成24-123之间的占位图ID，确保同一视频ID总是得到相同的占位图
+            return (idNum % 100) + 24;
+        }
+        
+        function createVideoCard(video) {
+            const videoCard = document.createElement('div');
+            videoCard.className = 'video-card';
+            videoCard.setAttribute('data-video-id', video.id);
+            // 不再直接使用tempUrl作为视频源，而是设置为视频ID或标记
+            // 因为Blob URL是会话特定的，不能跨会话使用
+            videoCard.setAttribute('data-video-src', 'video-id:' + video.id);
+            // 添加原始文件信息
+            if (video.originalName) {
+                videoCard.setAttribute('data-original-name', video.originalName);
+            }
+            if (video.fileSize) {
+                videoCard.setAttribute('data-file-size', video.fileSize);
+            }
+            if (video.fileType) {
+                videoCard.setAttribute('data-file-type', video.fileType);
+            }
+            if (video.uploadTime) {
+                videoCard.setAttribute('data-upload-time', video.uploadTime);
+            }
+            
+            // 检查视频是否被举报或下架
+            if (video.reported || video.banned) {
+                videoCard.style.display = 'none';
+            }
+            
+            // 假设我们需要从视频名称中解析出书籍信息
+            const associatedBookName = String(video.book_title || video.book_name || extractBookName(video.name) || '').trim();
+            const category = getCategoryFromBookName(associatedBookName || video.name || '');
+            
+            // 生成统一的占位图ID
+            const thumbnailId = getVideoThumbnailId(video.id);
+            const defaultThumbnail = `https://picsum.photos/id/${thumbnailId}/400/225`;
+            
+            videoCard.innerHTML = `
+                <div class="video-thumbnail">
+                    <img src="${video.thumbnailUrl || defaultThumbnail}" alt="${video.name}">
+                    <span class="video-duration">${video.duration || '00:00'}</span>
+                    <div class="video-play-btn">
+                        <i class="iconfont icon-play"></i>
+                    </div>
+                    ${video.status === 'approved' ? '<span class="status-badge status-approved">已发布</span>' : ''}
+                </div>
+                <div class="video-info">
+                    <h3 class="video-title">${video.name}</h3>
+                    <div style="font-size: 12px; color: #4f46e5; margin: 4px 0 2px 0;">关联图书：${associatedBookName || '未关联'}</div>
+                    <div class="video-meta">
+                        <span class="video-category">${category}</span>
+                        <div class="video-stats">
+                            <span class="stat-item like-btn ${video.is_liked ? 'liked' : ''}" data-video-id="${video.id}" title="点赞" style="cursor: pointer;">
+                                <i class="iconfont icon-like"></i> <span>点赞</span> <span class="like-count">${video.likes_count || video.likes || 0}</span>
+                            </span>
+                            <span class="stat-item collect-btn ${video.is_collected ? 'collected' : ''}" data-video-id="${video.id}" title="收藏" style="cursor: pointer;">
+                                <i class="iconfont icon-collection"></i> <span>收藏</span> <span class="collect-count">${video.collections_count || video.collections || 0}</span>
+                            </span>
+                            <span class="stat-item comment-btn" data-video-id="${video.id}" title="评论" style="cursor: pointer;">
+                                <i class="iconfont icon-comment"></i> <span>评论</span> <span class="comment-count">${video.comments_count || 0}</span>
+                            </span>
+                            <span class="stat-item report" title="举报" style="cursor: pointer;"><i class="iconfont icon-report"></i> <span>举报</span></span>
+                        </div>
+                    </div>
+                    <div class="video-user" style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+                        <div class="user-avatar-small" style="width: 32px; height: 32px; border-radius: 50%; overflow: hidden; flex-shrink: 0;">
+                            <img src="https://picsum.photos/id/${getUserIdHash(video.uploadUser || video.upload_user || video.id)}/100/100" alt="用户头像" style="width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+                        <div class="user-info">
+                            <div class="username" style="font-size: 14px; color: #666;">${video.uploadUser || video.upload_user || '未知用户'}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 添加点击事件 - 直接使用真实视频URL播放
+            videoCard.addEventListener('click', async function(e) {
+                // 避免点击其他交互元素时触发视频播放
+                if (!e.target.closest('.stat-item') && !e.target.closest('.user-info')) {
+                    // 从视频数据中获取真实的视频URL
+                    const videoId = this.getAttribute('data-video-id');
+                    
+                    // 记录浏览（如果用户已登录）
+                    const token = localStorage.getItem('token');
+                    if (token && videoId) {
+                        try {
+                            await fetch(`/api/videos/${videoId}/view`, {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${token}`
+                                }
+                            });
+                            const eventResult = await trackRecoEventByVideo(videoId, 'detail_view', 1);
+                            if (eventResult && eventResult.book_id) rememberRecoFocusBook(eventResult.book_id);
+                            scheduleSmartRecoRefresh(500);
+                        } catch (error) {
+                            console.error('记录浏览失败:', error);
+                            // 不影响视频播放，继续执行
+                        }
+                    }
+                    
+                    // 直接跳转到视频播放页面或使用真实URL播放
+                    startVideoWatchSession(videoId);
+                    window.open(video.tempUrl, '_blank');
+                }
+            });
+            
+            // 检查普通URL有效性的辅助函数
+            async function checkNormalUrlValidity(url) {
+                return new Promise((resolve) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('HEAD', url, true);
+                    xhr.timeout = 3000;
+                    
+                    xhr.onload = function() {
+                        resolve(xhr.status >= 200 && xhr.status < 400);
+                    };
+                    
+                    xhr.onerror = xhr.ontimeout = function() {
+                        resolve(false);
+                    };
+                    
+                    try {
+                        xhr.send();
+                    } catch (e) {
+                        resolve(false);
+                    }
+                });
+            };
+            
+            // 点赞功能
+            const likeBtn = videoCard.querySelector('.like-btn');
+            if (likeBtn) {
+                likeBtn.addEventListener('click', async function(e) {
+                    e.stopPropagation();
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                        showToast('请先登录', 'error');
+                        return;
+                    }
+                    
+                    const videoId = this.getAttribute('data-video-id');
+                    const likeCountSpan = this.querySelector('.like-count');
+                    
+                    try {
+                        const response = await fetch(`/api/videos/${videoId}/like`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            if (result.liked) {
+                                this.classList.add('liked');
+                                likeCountSpan.textContent = parseInt(likeCountSpan.textContent) + 1;
+                                const eventResult = await trackRecoEventByVideo(videoId, 'favorite', 1);
+                                if (eventResult && eventResult.book_id) rememberRecoFocusBook(eventResult.book_id);
+                                scheduleSmartRecoRefresh(350);
+                                showToast('点赞成功', 'success');
+                            } else {
+                                this.classList.remove('liked');
+                                likeCountSpan.textContent = Math.max(0, parseInt(likeCountSpan.textContent) - 1);
+                                showToast('已取消点赞', 'info');
+                            }
+                        } else {
+                            showToast(result.message || '操作失败', 'error');
+                        }
+                    } catch (error) {
+                        console.error('点赞失败:', error);
+                        showToast('操作失败，请稍后重试', 'error');
+                    }
+                });
+            }
+            
+            // 收藏功能
+            const collectBtn = videoCard.querySelector('.collect-btn');
+            if (collectBtn) {
+                collectBtn.addEventListener('click', async function(e) {
+                    e.stopPropagation();
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                        showToast('请先登录', 'error');
+                        return;
+                    }
+                    
+                    const videoId = this.getAttribute('data-video-id');
+                    const collectCountSpan = this.querySelector('.collect-count');
+                    
+                    try {
+                        const response = await fetch(`/api/videos/${videoId}/collect`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            if (result.collected) {
+                                this.classList.add('collected');
+                                collectCountSpan.textContent = parseInt(collectCountSpan.textContent) + 1;
+                                const eventResult = await trackRecoEventByVideo(videoId, 'cart_add', 1);
+                                if (eventResult && eventResult.book_id) rememberRecoFocusBook(eventResult.book_id);
+                                scheduleSmartRecoRefresh(350);
+                                showToast('收藏成功', 'success');
+                            } else {
+                                this.classList.remove('collected');
+                                collectCountSpan.textContent = Math.max(0, parseInt(collectCountSpan.textContent) - 1);
+                                showToast('已取消收藏', 'info');
+                            }
+                        } else {
+                            showToast(result.message || '操作失败', 'error');
+                        }
+                    } catch (error) {
+                        console.error('收藏失败:', error);
+                        showToast('操作失败，请稍后重试', 'error');
+                    }
+                });
+            }
+            
+            // 评论功能
+            const commentBtn = videoCard.querySelector('.comment-btn');
+            if (commentBtn) {
+                commentBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                        showToast('请先登录', 'error');
+                        return;
+                    }
+                    
+                    const videoId = this.getAttribute('data-video-id');
+                    trackRecoEventByVideo(videoId, 'comment', 1).then((eventResult) => {
+                        if (eventResult && eventResult.book_id) rememberRecoFocusBook(eventResult.book_id);
+                    });
+                    scheduleSmartRecoRefresh(600);
+                    openCommentModal(videoId);
+                });
+            }
+            
+            // 举报功能
+            const reportBtn = videoCard.querySelector('.stat-item.report');
+            if (reportBtn) {
+                reportBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    // 存储当前要举报的视频ID
+                    localStorage.setItem('reportingVideoId', video.id);
+                    document.getElementById('reportModal').style.display = 'flex';
+                });
+            }
+            
+            return videoCard;
+        }
+        
+        // 设置视频播放器并播放视频
+        function setupVideoPlayer(videoSrc) {
+            // 1. 检查是否存在视频播放容器
+            let videoPlayerContainer = document.getElementById('localVideoPlayer');
+            if (!videoPlayerContainer) {
+                // 创建视频播放容器
+                videoPlayerContainer = document.createElement('div');
+                videoPlayerContainer.id = 'localVideoPlayer';
+                videoPlayerContainer.style.position = 'fixed';
+                videoPlayerContainer.style.top = '0';
+                videoPlayerContainer.style.left = '0';
+                videoPlayerContainer.style.width = '100%';
+                videoPlayerContainer.style.height = '100%';
+                videoPlayerContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+                videoPlayerContainer.style.zIndex = '1000';
+                videoPlayerContainer.style.display = 'flex';
+                videoPlayerContainer.style.justifyContent = 'center';
+                videoPlayerContainer.style.alignItems = 'center';
+                videoPlayerContainer.innerHTML = `
+                    <div style="position: relative; max-width: 90%; max-height: 90%;">
+                        <video id="localVideoElement" controls style="width: 100%; height: auto;"></video>
+                        <button id="closeVideoBtn" style="position: absolute; top: -30px; right: 0; background: red; color: white; border: none; padding: 5px 10px; cursor: pointer;">关闭</button>
+                    </div>
+                `;
+                document.body.appendChild(videoPlayerContainer);
+                
+                // 添加关闭按钮事件
+                document.getElementById('closeVideoBtn').addEventListener('click', function() {
+                    videoPlayerContainer.remove();
+                });
+            }
+            
+            // 2. 设置视频源并播放
+            const videoElement = document.getElementById('localVideoElement');
+            videoElement.src = videoSrc;
+            videoElement.play().catch(error => {
+                console.error('播放视频失败:', error);
+                alert('播放视频失败，请稍后再试');
+            });
+            
+            // 3. 显示播放容器
+            videoPlayerContainer.style.display = 'flex';
+        }
+
+        // 检查blob URL是否有效
+        function checkBlobUrlValidity(blobUrl) {
+            return new Promise((resolve) => {
+                // 创建一个新的XMLHttpRequest来测试blob URL
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', blobUrl, true);
+                xhr.responseType = 'blob';
+                
+                xhr.onload = function() {
+                    // 如果状态码是200或0（本地blob URL），则认为有效
+                    resolve(xhr.status === 200 || xhr.status === 0);
+                };
+                
+                xhr.onerror = function() {
+                    // 发生错误，认为URL无效
+                    resolve(false);
+                };
+                
+                // 使用较短的超时时间
+                xhr.timeout = 2000;
+                xhr.ontimeout = function() {
+                    resolve(false);
+                };
+                
+                try {
+                    xhr.send();
+                } catch (e) {
+                    resolve(false);
+                }
+            });
+        }
+
+        // 辅助函数：从视频名称中提取书籍名称
+        function extractBookName(videoName) {
+            // 简单的提取逻辑，实际项目中可能需要更复杂的处理
+            const bookMatch = videoName.match(/《(.+?)》/);
+            if (bookMatch) {
+                return bookMatch[1];
+            }
+            return videoName.replace(/\.(mp4|mov|avi)$/, '');
+        }
+        
+        // 辅助函数：根据书籍名称获取分类
+        function getCategoryFromBookName(bookName) {
+            const categories = [
+                { name: '科幻小说', keywords: ['三体', '科幻', '未来'] },
+                { name: '文学小说', keywords: ['百年孤独', '文学', '小说'] },
+                { name: '历史读物', keywords: ['历史', '史记'] },
+                { name: '哲学经典', keywords: ['论语', '哲学', '思想'] }
+            ];
+            
+            for (const category of categories) {
+                for (const keyword of category.keywords) {
+                    if (bookName.includes(keyword)) {
+                        return category.name;
+                    }
+                }
+            }
+            
+            return '其他';
+        }
+        
+        // 辅助函数：根据视频ID生成用户ID哈希
+        function getUserIdHash(videoId) {
+            // 简单的哈希函数，用于生成不同的用户头像
+            let hash = 0;
+            for (let i = 0; i < videoId.length; i++) {
+                const char = videoId.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // 转换为32位整数
+            }
+            return Math.abs(hash) % 1000 + 1; // 1-1000的范围
+        }
+        
+        // 加载热门推荐视频
+        function loadTrendingVideos() {
+            const trendingList = document.getElementById('trendingList');
+            if (!trendingList) return;
+            
+            // 初始显示加载状态
+            trendingList.innerHTML = '<div style="text-align: center; padding: 20px;">加载中...</div>';
+            
+            // 调用API获取热门视频
+            fetch('/api/videos?sort=views&limit=5')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('网络请求失败: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    trendingList.innerHTML = '';
+                    
+                    if (data.success && Array.isArray(data.videos)) {
+                        const trendingVideos = data.videos;
+                        
+                        trendingVideos.forEach((video, index) => {
+                            const trendingItem = document.createElement('div');
+                            trendingItem.className = 'trending-item';
+                            trendingItem.setAttribute('data-video-id', video.id);
+                            
+                            // 设置排名样式
+                            let rankClass = '';
+                            if (index === 0) rankClass = 'top';
+                            if (index === 1) rankClass = 'second';
+                            if (index === 2) rankClass = 'third';
+                            
+                            trendingItem.innerHTML = `
+                                <div class="trending-rank ${rankClass}">${index + 1}</div>
+                                <div class="trending-thumbnail">
+                                    <img src="${video.thumbnailUrl || 'https://picsum.photos/id/' + getVideoThumbnailId(video.id) + '/160/90'}" alt="${video.video_name}">
+                                </div>
+                                <div class="trending-info">
+                                    <div class="trending-book-title">${video.video_name}</div>
+                                    <div class="trending-views">${video.views || 0} 次观看</div>
+                                </div>
+                            `;
+                            
+                            // 添加点击事件
+                            trendingItem.addEventListener('click', () => {
+                                window.open(video.video_url, '_blank');
+                            });
+                            
+                            trendingList.appendChild(trendingItem);
+                        });
+                    } else {
+                        trendingList.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">暂无热门推荐</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('加载热门视频失败:', error);
+                    trendingList.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">加载失败</div>';
+                });
+        }
+        
+        // 加载AI标签云
+        function loadAiTags() {
+            const aiTagCloud = document.getElementById('aiTagCloud');
+            if (!aiTagCloud) return;
+            
+            // 初始显示加载状态
+            aiTagCloud.innerHTML = '<div style="text-align: center; padding: 20px;">加载中...</div>';
+            
+            // 调用API获取AI标签（这里使用模拟数据，实际应该从服务器获取）
+            // 由于没有专门的AI标签API，我们从视频数据中提取标签
+            fetch('/api/videos')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('网络请求失败: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    aiTagCloud.innerHTML = '';
+                    
+                    if (data.success && Array.isArray(data.videos)) {
+                        const videos = data.videos;
+                        // 从视频中提取标签
+                        const allTags = new Set();
+                        
+                        videos.forEach(video => {
+                            const category = getCategoryFromBookName(video.video_name);
+                            allTags.add(category);
+                        });
+                        
+                        // 转换为数组并取前6个标签（只使用实际提取的标签）
+                        const tagsArray = Array.from(allTags).slice(0, 6);
+                        
+                        tagsArray.forEach(tag => {
+                            const aiTag = document.createElement('div');
+                            aiTag.className = 'ai-tag';
+                            aiTag.textContent = tag;
+                            
+                            // 添加点击事件
+                            aiTag.addEventListener('click', () => {
+                                // 这里可以添加标签点击逻辑，比如筛选相关视频
+                                showToast(`正在筛选"${tag}"相关视频`, 'info');
+                            });
+                            
+                            aiTagCloud.appendChild(aiTag);
+                        });
+                    } else {
+                        // 如果没有视频数据，显示默认标签
+                        const defaultTags = ['科幻小说', '心理学', '文学经典', '投资策略', '历史传记', '人工智能'];
+                        defaultTags.forEach(tag => {
+                            const aiTag = document.createElement('div');
+                            aiTag.className = 'ai-tag';
+                            aiTag.textContent = tag;
+                            aiTagCloud.appendChild(aiTag);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('加载AI标签失败:', error);
+                    // 显示默认标签
+                    const defaultTags = ['科幻小说', '心理学', '文学经典', '投资策略', '历史传记', '人工智能'];
+                    defaultTags.forEach(tag => {
+                        const aiTag = document.createElement('div');
+                        aiTag.className = 'ai-tag';
+                        aiTag.textContent = tag;
+                        aiTagCloud.appendChild(aiTag);
+                    });
+                });
+        }
+        
+        async function trackRecoEvent(bookId, eventType, eventValue, strategy = '') {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                await fetch('/api/reco/event', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        book_id: bookId,
+                        event_type: eventType,
+                        event_value: eventValue == null ? 1 : eventValue,
+                        scene: 'book_square',
+                        session_id: sessionStorage.getItem('recoSessionId') || '',
+                        strategy: strategy || ''
+                    })
+                });
+            } catch (e) {
+                console.warn('上报推荐事件失败:', e);
+            }
+        }
+        
+        async function trackRecoEventByVideo(videoId, eventType, eventValue, strategy = '') {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token || !videoId || !eventType) return;
+                const res = await fetch('/api/reco/video-event', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        video_id: Number(videoId),
+                        event_type: eventType,
+                        event_value: eventValue == null ? 1 : eventValue,
+                        scene: 'book_square_video',
+                        session_id: sessionStorage.getItem('recoSessionId') || '',
+                        strategy: strategy || ''
+                    })
+                });
+                const data = await res.json().catch(() => null);
+                return data;
+            } catch (e) {
+                console.warn('上报视频推荐事件失败:', e);
+                return null;
+            }
+        }
+        
+        const activeVideoWatchSessions = new Map();
+        const PENDING_VIDEO_WATCH_KEY = 'book_square_pending_video_watch';
+        function savePendingVideoWatch(videoId, startedAt) {
+            try {
+                localStorage.setItem(
+                    PENDING_VIDEO_WATCH_KEY,
+                    JSON.stringify({ videoId: Number(videoId) || 0, startedAt: Number(startedAt) || Date.now() })
+                );
+            } catch (e) {}
+        }
+        function readPendingVideoWatch() {
+            try {
+                const raw = localStorage.getItem(PENDING_VIDEO_WATCH_KEY);
+                if (!raw) return null;
+                const obj = JSON.parse(raw);
+                const id = Number(obj && obj.videoId);
+                const startedAt = Number(obj && obj.startedAt);
+                if (!id || !startedAt) return null;
+                return { videoId: id, startedAt };
+            } catch (e) {
+                return null;
+            }
+        }
+        function clearPendingVideoWatch() {
+            try { localStorage.removeItem(PENDING_VIDEO_WATCH_KEY); } catch (e) {}
+        }
+        function startVideoWatchSession(videoId) {
+            const id = Number(videoId);
+            if (!id) return;
+            const startedAt = Date.now();
+            activeVideoWatchSessions.set(id, startedAt);
+            // 兜底：即便在同标签页打开视频导致本页状态丢失，也可在返回后恢复 dwell 上报
+            savePendingVideoWatch(id, startedAt);
+        }
+        async function flushVideoWatchSessions() {
+            const pending = readPendingVideoWatch();
+            if (pending && pending.videoId && pending.startedAt) {
+                if (!activeVideoWatchSessions.has(pending.videoId)) {
+                    activeVideoWatchSessions.set(pending.videoId, pending.startedAt);
+                }
+            }
+            if (activeVideoWatchSessions.size === 0) return;
+            const now = Date.now();
+            const tasks = [];
+            let hasMeaningfulDwell = false;
+            for (const [videoId, startedAt] of activeVideoWatchSessions.entries()) {
+                const sec = Math.max(0, (now - Number(startedAt || now)) / 1000);
+                if (sec >= 2) {
+                    // 归一化到 [0,2]，20 秒及以上记满
+                    const normalized = Math.min(2, sec / 20);
+                    hasMeaningfulDwell = true;
+                    tasks.push(
+                        trackRecoEventByVideo(videoId, 'dwell', normalized).then((eventResult) => {
+                            if (eventResult && eventResult.book_id) {
+                                rememberRecoFocusBook(eventResult.book_id);
+                            }
+                        }).catch(() => {})
+                    );
+                }
+            }
+            activeVideoWatchSessions.clear();
+            clearPendingVideoWatch();
+            if (tasks.length) {
+                await Promise.allSettled(tasks);
+            }
+            if (hasMeaningfulDwell) {
+                scheduleSmartRecoRefresh(250);
+            }
+        }
+        window.addEventListener('focus', () => {
+            flushVideoWatchSessions();
+        });
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) flushVideoWatchSessions();
+        });
+        
+        function rememberRecoFocusBook(bookId) {
+            const id = Number(bookId);
+            if (!id) return;
+            if (!window.__smartRecoState) {
+                window.__smartRecoState = { loading: false, lastLoadAt: 0 };
+            }
+            window.__smartRecoState.focusBookId = id;
+            window.__smartRecoState.focusAt = Date.now();
+        }
+
+        function hashRecoSeed(str) {
+            let h = 2166136261;
+            const s = String(str || '');
+            for (let i = 0; i < s.length; i++) {
+                h ^= s.charCodeAt(i);
+                h += (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24);
+            }
+            return (h >>> 0);
+        }
+
+        function recoPalette(seed) {
+            const palettes = [
+                ['#2563EB', '#1D4ED8'],
+                ['#7C3AED', '#6D28D9'],
+                ['#0F766E', '#0D9488'],
+                ['#B45309', '#D97706'],
+                ['#BE123C', '#E11D48'],
+                ['#374151', '#111827']
+            ];
+            return palettes[seed % palettes.length];
+        }
+
+        function buildRecoCoverDataUrl(title = '图书', author = '', seedSource = '') {
+            const seed = hashRecoSeed(seedSource || `${title}-${author}`);
+            const [c1, c2] = recoPalette(seed);
+            const shortTitle = String(title || '图书').slice(0, 8);
+            const shortAuthor = String(author || '未知作者').slice(0, 10);
+            const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="72" height="96" viewBox="0 0 72 96">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="${c1}" />
+      <stop offset="100%" stop-color="${c2}" />
+    </linearGradient>
+  </defs>
+  <rect width="72" height="96" rx="8" fill="url(#g)" />
+  <rect x="6" y="6" width="60" height="84" rx="6" fill="rgba(255,255,255,0.08)" />
+  <text x="10" y="45" fill="#fff" font-size="10" font-weight="700" font-family="Arial, sans-serif">${shortTitle}</text>
+  <text x="10" y="60" fill="#E5E7EB" font-size="8" font-family="Arial, sans-serif">${shortAuthor}</text>
+</svg>`;
+            return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+        }
+
+        function onRecoCoverError(img) {
+            if (!img) return;
+            const title = img.getAttribute('alt') || '图书';
+            const author = img.dataset.author || '';
+            const seed = img.dataset.seed || title;
+            img.onerror = null;
+            img.src = buildRecoCoverDataUrl(title, author, seed);
+        }
+        
+        let recoRefreshTimer = null;
+        function scheduleSmartRecoRefresh(delay = 600) {
+            if (recoRefreshTimer) clearTimeout(recoRefreshTimer);
+            recoRefreshTimer = setTimeout(() => {
+                loadSmartRecommendations(true);
+                loadSmartVideoRecommendations(true);
+            }, Math.max(200, Number(delay) || 600));
+        }
+        
+        async function loadSmartRecommendations(force = false) {
+            const listEl = document.getElementById('smartRecoList');
+            const sourceEl = document.getElementById('smartRecoSource');
+            if (!listEl) return;
+            if (!window.__smartRecoState) {
+                window.__smartRecoState = { loading: false, lastLoadAt: 0, blockedBookIds: [] };
+            }
+            const now = Date.now();
+            if (window.__smartRecoState.loading) return;
+            if (!force && now - window.__smartRecoState.lastLoadAt < 2500) return;
+            window.__smartRecoState.loading = true;
+            window.__smartRecoState.lastLoadAt = now;
+            const focusId = Number(window.__smartRecoState.focusBookId || 0);
+            const focusAt = Number(window.__smartRecoState.focusAt || 0);
+            const useFocus = focusId > 0 && (Date.now() - focusAt) < 5 * 60 * 1000;
+            const token = localStorage.getItem('token');
+            if (!token) {
+                listEl.innerHTML = '<div style="color:#999;font-size:13px;">登录后可获得个性化推荐</div>';
+                if (sourceEl) sourceEl.textContent = '推荐引擎：未登录';
+                window.__smartRecoState.loading = false;
+                return;
+            }
+            if (!sessionStorage.getItem('recoSessionId')) {
+                sessionStorage.setItem('recoSessionId', `reco_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
+            }
+            listEl.innerHTML = '<div style="color:#999;font-size:13px;">正在生成推荐...</div>';
+            try {
+                const query = `/api/reco/books?scene=book_square&limit=8&salt=${Date.now()}${useFocus ? `&focus_book_id=${focusId}` : ''}`;
+                const res = await fetch(query, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success || !Array.isArray(data.recommendations) || data.recommendations.length === 0) {
+                    listEl.innerHTML = '<div style="color:#999;font-size:13px;">暂无个性化推荐，先看看热门内容</div>';
+                    if (sourceEl) sourceEl.textContent = '推荐引擎：暂无数据';
+                    window.__smartRecoState.loading = false;
+                    return;
+                }
+                if (sourceEl) {
+                    const via = String(data.via || '').trim();
+                    sourceEl.textContent = via === 'reco-service' ? '推荐引擎：独立微服务' : '推荐引擎：本地回退';
+                }
+                
+                listEl.innerHTML = '';
+                if (useFocus) {
+                    window.__smartRecoState.focusBookId = 0;
+                    window.__smartRecoState.focusAt = 0;
+                }
+                const blockedSet = new Set((window.__smartRecoState.blockedBookIds || []).map((x) => Number(x)));
+                const visibleItems = data.recommendations.filter((it) => !blockedSet.has(Number(it.id)));
+                visibleItems.forEach((item, idx) => {
+                    const row = document.createElement('div');
+                    row.className = 'reco-item';
+                    const strategy = String(item.strategy || 'hot').toLowerCase();
+                    const strategyLabelMap = {
+                        cf: '协同过滤',
+                        content: '内容匹配',
+                        hot: '热门补齐',
+                        fresh: '新书探索',
+                        focus: '即时响应'
+                    };
+                    const strategyLabel = strategyLabelMap[strategy] || '混合推荐';
+                    const seed = String(item.isbn || `${item.title || ''}-${item.author || ''}`);
+                    const cover = String(item.cover_url || '').trim() || buildRecoCoverDataUrl(item.title, item.author, seed);
+                    const scoreVal = Number(item.score || 0);
+                    const scoreText = Number.isFinite(scoreVal) ? scoreVal.toFixed(3) : '0.000';
+                    const bd = item.score_breakdown || {};
+                    const bdText = `cf:${Number(bd.cf || 0).toFixed(2)} ct:${Number(bd.content || 0).toFixed(2)} kg:${Number(bd.kg || 0).toFixed(2)} kg_graph:${Number(bd.kg_graph || 0).toFixed(2)} hot:${Number(bd.hot || 0).toFixed(2)} fresh:${Number(bd.fresh || 0).toFixed(2)} focus:${Number(bd.focus || 0).toFixed(2)}`;
+                    row.innerHTML = `
+                        <img src="${cover}" alt="${item.title || '图书'}" class="reco-cover" referrerpolicy="no-referrer"
+                             data-seed="${seed}" data-author="${item.author || ''}" onerror="onRecoCoverError(this)">
+                        <div style="flex:1;min-width:0;">
+                            <div class="reco-title">${item.title || '未命名图书'}</div>
+                            <div class="reco-meta">${item.author || '未知作者'} · ${item.category || '未分类'}</div>
+                            <div class="reco-badges">
+                                <span class="reco-reason">${item.reason || '为你推荐'}</span>
+                                <span class="reco-strategy ${strategy}">${strategyLabel}</span>
+                                <span class="reco-reason">score:${scoreText}</span>
+                            </div>
+                            <div style="font-size:12px;color:#94a3b8;margin-top:2px;">${bdText}</div>
+                            <div class="reco-actions">
+                                <button type="button" class="reco-action-btn" data-act="explain">为什么推荐</button>
+                                <button type="button" class="reco-action-btn" data-act="not-interested">不感兴趣</button>
+                            </div>
+                        </div>
+                    `;
+                    row.addEventListener('click', async () => {
+                        await trackRecoEvent(item.id, 'click', 1, strategy);
+                        window.location.href = `bookstore.html?book_id=${encodeURIComponent(item.id)}&search=${encodeURIComponent(item.title || '')}`;
+                    });
+                    listEl.appendChild(row);
+                    const explainBtn = row.querySelector('[data-act="explain"]');
+                    const notInterestedBtn = row.querySelector('[data-act="not-interested"]');
+                    if (explainBtn) {
+                        explainBtn.addEventListener('click', (ev) => {
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                            const reasonText = item.reason || '与你的近期偏好相关';
+                            showToast(`推荐解释：${reasonText}<br>${bdText}`, 'info');
+                        });
+                    }
+                    if (notInterestedBtn) {
+                        notInterestedBtn.addEventListener('click', async (ev) => {
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                            await trackRecoEvent(item.id, 'report', 1, strategy);
+                            const nextBlocked = new Set((window.__smartRecoState.blockedBookIds || []).map((x) => Number(x)));
+                            nextBlocked.add(Number(item.id));
+                            window.__smartRecoState.blockedBookIds = Array.from(nextBlocked).slice(-120);
+                            row.remove();
+                            showToast('已减少此类推荐，后续会逐步调整', 'success');
+                        });
+                    }
+                    // 曝光埋点
+                    trackRecoEvent(item.id, 'impression', 1 + Math.max(0, (8 - idx) * 0.02), strategy);
+                });
+                if (sourceEl) {
+                    const strategyCount = {};
+                    visibleItems.forEach((it) => {
+                        const k = String(it.strategy || 'hot').toLowerCase();
+                        strategyCount[k] = (strategyCount[k] || 0) + 1;
+                    });
+                    const summary = Object.entries(strategyCount).map(([k, v]) => `${k}:${v}`).join(' ');
+                    sourceEl.textContent += summary ? `（本轮策略 ${summary}）` : '';
+                }
+            } catch (error) {
+                console.error('加载智能推荐失败:', error);
+                listEl.innerHTML = '<div style="color:#999;font-size:13px;">推荐加载失败，已降级为默认内容</div>';
+                if (sourceEl) sourceEl.textContent = '推荐引擎：异常（已回退）';
+            } finally {
+                window.__smartRecoState.loading = false;
+            }
+        }
+
+        async function loadSmartVideoRecommendations(force = false) {
+            const listEl = document.getElementById('smartVideoRecoList');
+            const sourceEl = document.getElementById('smartVideoRecoSource');
+            if (!listEl) return;
+            if (!window.__smartVideoRecoState) {
+                window.__smartVideoRecoState = { loading: false, lastLoadAt: 0 };
+            }
+            const now = Date.now();
+            if (window.__smartVideoRecoState.loading) return;
+            if (!force && now - window.__smartVideoRecoState.lastLoadAt < 2500) return;
+            window.__smartVideoRecoState.loading = true;
+            window.__smartVideoRecoState.lastLoadAt = now;
+            const token = localStorage.getItem('token');
+            if (!token) {
+                listEl.innerHTML = '<div style="color:#999;font-size:13px;">登录后可获得个性化视频推荐</div>';
+                if (sourceEl) sourceEl.textContent = '视频推荐引擎：未登录';
+                window.__smartVideoRecoState.loading = false;
+                return;
+            }
+            listEl.innerHTML = '<div style="color:#999;font-size:13px;">正在生成视频推荐...</div>';
+            try {
+                const targetLimit = 5;
+                const res = await fetch(`/api/reco/videos?scene=book_square_video&limit=5&salt=${Date.now()}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await res.json();
+                if (!res.ok || !data.success || !Array.isArray(data.recommendations) || data.recommendations.length === 0) {
+                    listEl.innerHTML = '<div style="color:#999;font-size:13px;">暂无视频推荐</div>';
+                    if (sourceEl) sourceEl.textContent = '视频推荐引擎：暂无数据';
+                    window.__smartVideoRecoState.loading = false;
+                    return;
+                }
+                let recItems = Array.isArray(data.recommendations) ? data.recommendations.slice() : [];
+                recItems = recItems.map((it) => ({
+                    ...it,
+                    __source: 'reco'
+                }));
+                // 兜底补齐：独立微服务有时只返回 1 条，前端从已发布视频补齐到 5 条
+                if (recItems.length < targetLimit) {
+                    try {
+                        const hotRes = await fetch(`/api/videos?sort=views&limit=${targetLimit}`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        const hotData = await hotRes.json();
+                        if (hotRes.ok && hotData.success && Array.isArray(hotData.videos)) {
+                            const seen = new Set(recItems.map((it) => Number(it.id)));
+                            hotData.videos.forEach((v) => {
+                                const vid = Number(v.id);
+                                if (!vid || seen.has(vid)) return;
+                                seen.add(vid);
+                                recItems.push({
+                                    id: vid,
+                                    video_name: v.video_name || '未命名视频',
+                                    book_name: v.book_name || v.book_title || '未关联图书',
+                                    video_url: v.video_url || '',
+                                    video_category: v.video_category || '未分类',
+                                    reason: '热门视频补齐',
+                                    strategy: 'hot',
+                                    score: 0,
+                                    __source: 'fill'
+                                });
+                            });
+                            recItems = recItems.slice(0, targetLimit);
+                        }
+                    } catch (fillErr) {
+                        console.warn('视频推荐补齐失败:', fillErr);
+                    }
+                }
+                if (sourceEl) {
+                    const via = String(data.via || '').trim();
+                    sourceEl.textContent = via === 'reco-service'
+                        ? '视频推荐引擎：独立微服务'
+                        : '视频推荐引擎：本地回退';
+                    if (recItems.length < targetLimit) {
+                        sourceEl.textContent += `（当前仅 ${recItems.length} 条）`;
+                    } else if (Array.isArray(data.recommendations) && data.recommendations.length < targetLimit) {
+                        sourceEl.textContent += '（已补齐）';
+                    }
+                    const recoCount = recItems.filter((it) => it.__source === 'reco').length;
+                    const fillCount = recItems.filter((it) => it.__source === 'fill').length;
+                    sourceEl.textContent += `（算法:${recoCount} 补齐:${fillCount}）`;
+                }
+                listEl.innerHTML = '';
+                recItems.forEach((item) => {
+                    const row = document.createElement('div');
+                    row.className = 'reco-item';
+                    const sourceBadge = item.__source === 'reco'
+                        ? '<span class="reco-strategy content">算法推荐</span>'
+                        : '<span class="reco-strategy hot">补齐推荐</span>';
+                    const scoreText = Number.isFinite(Number(item.score))
+                        ? Number(item.score).toFixed(3)
+                        : '0.000';
+                    row.innerHTML = `
+                        <img src="https://picsum.photos/seed/vreco${item.id}/72/96" alt="${item.video_name || '视频'}" class="reco-cover">
+                        <div style="flex:1;min-width:0;">
+                            <div class="reco-title">${item.video_name || '未命名视频'}</div>
+                            <div class="reco-meta">${item.book_name || '未关联图书'} · ${(item.video_category || '未分类')}</div>
+                            <div class="reco-badges">
+                                <span class="reco-reason">${item.reason || '为你推荐'}</span>
+                                <span class="reco-strategy content">${(item.strategy || 'content').toUpperCase()}</span>
+                                ${sourceBadge}
+                                <span class="reco-reason">score:${scoreText}</span>
+                            </div>
+                        </div>
+                    `;
+                    row.addEventListener('click', async () => {
+                        const vid = Number(item.id);
+                        const strategy = String(item.strategy || 'content');
+                        if (vid) {
+                            // 视频推荐位点击后，立即上报并触发图书推荐刷新，避免“看了没反应”
+                            const clickResult = await trackRecoEventByVideo(vid, 'click', 1, strategy);
+                            const detailResult = await trackRecoEventByVideo(vid, 'detail_view', 1, strategy);
+                            const mappedBookId = Number(
+                                (detailResult && detailResult.book_id) ||
+                                (clickResult && clickResult.book_id) ||
+                                0
+                            );
+                            if (mappedBookId > 0) {
+                                rememberRecoFocusBook(mappedBookId);
+                            }
+                            // 关键：推荐视频流点击时也要启动观看会话，返回页面后才能上报 dwell
+                            startVideoWatchSession(vid);
+                            scheduleSmartRecoRefresh(300);
+                        }
+                        if (item.video_url) {
+                            window.open(item.video_url, '_blank');
+                        }
+                    });
+                    listEl.appendChild(row);
+                });
+            } catch (error) {
+                console.error('加载智能视频推荐失败:', error);
+                listEl.innerHTML = '<div style="color:#999;font-size:13px;">视频推荐加载失败</div>';
+                if (sourceEl) sourceEl.textContent = '视频推荐引擎：异常（已回退）';
+            } finally {
+                window.__smartVideoRecoState.loading = false;
+            }
+        }
+        
+        // 在页面加载时调用
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTrendingVideos();
+            loadAiTags();
+            loadSmartRecommendations();
+            loadSmartVideoRecommendations();
+        });
+
+                </script>
+                
+                <!-- 加载更多按钮 -->
+                <div class="load-more">
+                    <button class="load-more-btn">加载更多视频</button>
+                </div>
+            </div>
+            
+            <!-- 右侧边栏 -->
+            <div class="sidebar">
+                <!-- 发布视频卡片 -->
+                <div class="publish-card">
+                    <h3>想要分享你的读书感悟？</h3>
+                    <p>创建AI视频，展示你喜爱的图书，与全球书友共同交流分享</p>
+                    <a href="create-video.html" class="create-video-btn">
+                        <i class="iconfont icon-plus"></i>
+                        <span>创建视频</span>
+                    </a>
+                </div>
+                
+                <!-- 热门推荐 -->
+                <div class="trending-section">
+                    <h3 class="trending-title">
+                        <i class="iconfont icon-hot"></i>
+                        <span>热门推荐</span>
+                    </h3>
+                    <div class="trending-list" id="trendingList">
+                        <!-- 热门推荐数据将通过JavaScript动态加载 -->
+                    </div>
+                </div>
+                
+                <!-- 智能推荐 -->
+                <div class="ai-recommendations">
+                    <h3 class="recommendations-title">
+                        <i class="iconfont icon-ai"></i>
+                        <span>为你推荐</span>
+                    </h3>
+                    <div class="recommendations-chart" id="recommendationsChart"></div>
+                    <div style="font-size:13px;color:#666;margin:2px 0 8px 0;">推荐视频流</div>
+                    <div id="smartVideoRecoSource" class="reco-source-hint">视频推荐引擎：加载中...</div>
+                    <div id="smartVideoRecoList" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+                        <!-- 智能推荐视频列表将通过JavaScript动态加载 -->
+                    </div>
+                    <div style="font-size:13px;color:#666;margin:2px 0 8px 0;">推荐图书</div>
+                    <div id="smartRecoSource" class="reco-source-hint">推荐引擎：加载中...</div>
+                    <div id="smartRecoList" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
+                        <!-- 智能推荐图书列表将通过JavaScript动态加载 -->
+                    </div>
+                    <div class="ai-tag-cloud" id="aiTagCloud">
+                        <!-- 智能标签数据将通过JavaScript动态加载 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 举报模态框 -->
+    <div class="modal" id="reportModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">举报视频</h3>
+                <button class="close-modal" id="closeReportModal">
+                    <i class="iconfont icon-close"></i>
+                </button>
+            </div>
+            <div class="report-reasons">
+                <div class="report-reason">
+                    <input type="radio" id="reason1" name="reportReason" value="1">
+                    <label for="reason1">内容违规</label>
+                </div>
+                <div class="report-reason">
+                    <input type="radio" id="reason2" name="reportReason" value="2">
+                    <label for="reason2">版权侵犯</label>
+                </div>
+                <div class="report-reason">
+                    <input type="radio" id="reason3" name="reportReason" value="3">
+                    <label for="reason3">低俗内容</label>
+                </div>
+                <div class="report-reason">
+                    <input type="radio" id="reason4" name="reportReason" value="4">
+                    <label for="reason4">虚假信息</label>
+                </div>
+                <div class="report-reason">
+                    <input type="radio" id="reason5" name="reportReason" value="5">
+                    <label for="reason5">其他原因</label>
+                </div>
+            </div>
+            <div class="report-note">
+                <textarea placeholder="请详细描述您举报的原因（选填）"></textarea>
+            </div>
+            <button class="report-submit" id="submitReport">提交举报</button>
+        </div>
+    </div>
+    
+    <!-- 页脚 -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-column">
+                <h3>关于我们</h3>
+                <ul>
+                    <li><a href="#">公司介绍</a></li>
+                    <li><a href="#">联系方式</a></li>
+                    <li><a href="#">招聘信息</a></li>
+                    <li><a href="#">合作伙伴</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>帮助中心</h3>
+                <ul>
+                    <li><a href="#">常见问题</a></li>
+                    <li><a href="#">使用指南</a></li>
+                    <li><a href="#">意见反馈</a></li>
+                    <li><a href="#">用户协议</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>关注我们</h3>
+                <ul>
+                    <li><a href="#">微信公众号</a></li>
+                    <li><a href="#">微博</a></li>
+                    <li><a href="#">抖音</a></li>
+                    <li><a href="#">小红书</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>&copy; 2023 图书智能宣传系统 版权所有</p>
+        </div>
+    </footer>
+    
+    <!-- 底部导航栏 - 移动端 -->
+    <nav class="mobile-nav">
+        <div class="mobile-nav-items">
+            <a href="bookstore.html" class="mobile-nav-item">
+                <i class="iconfont icon-bookstore mobile-nav-icon"></i>
+                <span class="mobile-nav-text">图书商店</span>
+            </a>
+            <a href="create-video.html" class="mobile-nav-item">
+                <i class="iconfont icon-video-camera mobile-nav-icon"></i>
+                <span class="mobile-nav-text">生成视频</span>
+            </a>
+            <a href="book-square.html" class="mobile-nav-item active">
+                <i class="iconfont icon-square mobile-nav-icon"></i>
+                <span class="mobile-nav-text">图书广场</span>
+            </a>
+            <a href="user-center.html" class="mobile-nav-item">
+                <i class="iconfont icon-user mobile-nav-icon"></i>
+                <span class="mobile-nav-text">个人中心</span>
+            </a>
+        </div>
+    </nav>
+    
+    <!-- JavaScript -->
+                <script>
+                    // 全局函数：显示提示信息
+                    function showToast(message, type = 'info') {
+                        // 创建提示元素
+                        const toast = document.createElement('div');
+                        toast.style.cssText = 'position: fixed; top: 20px; right: 20px; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10000; color: white; font-size: 14px; max-width: 300px; word-wrap: break-word; animation: slideIn 0.3s ease-out;';
+                        
+                        // 设置不同类型的样式
+                        if (type === 'success') {
+                            toast.style.backgroundColor = '#10b981';
+                        } else if (type === 'error') {
+                            toast.style.backgroundColor = '#ef4444';
+                        } else if (type === 'info') {
+                            toast.style.backgroundColor = '#3b82f6';
+                        } else {
+                            toast.style.backgroundColor = '#6b7280';
+                        }
+                        
+                        toast.innerHTML = message;
+                        
+                        // 添加到页面
+                        document.body.appendChild(toast);
+                        
+                        // 自动关闭
+                        setTimeout(() => {
+                            toast.style.animation = 'slideOut 0.3s ease-in';
+                            setTimeout(() => {
+                                if (toast.parentNode) {
+                                    document.body.removeChild(toast);
+                                }
+                            }, 300);
+                        }, 3000);
+                    }
+                    
+                    // 添加动画样式
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        @keyframes slideIn {
+                            from {
+                                transform: translateX(100%);
+                                opacity: 0;
+                            }
+                            to {
+                                transform: translateX(0);
+                                opacity: 1;
+                            }
+                        }
+                        @keyframes slideOut {
+                            from {
+                                transform: translateX(0);
+                                opacity: 1;
+                            }
+                            to {
+                                transform: translateX(100%);
+                                opacity: 0;
+                            }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                    
+                    document.addEventListener('DOMContentLoaded', function() {
+            // 检查用户是否已登录
+            function checkLoginStatus() {
+                const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+                const token = localStorage.getItem('token');
+                
+                if (!isLoggedIn || !token) {
+                    showToast('请先登录后再访问', 'error');
+                    // 重定向到登录页面
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1500);
+                    return false;
+                }
+                
+                // 验证token是否有效（这里只是简单检查，实际项目中应发送到服务器验证）
+                try {
+                    const tokenParts = token.split('.');
+                    if (tokenParts.length !== 3) {
+                        throw new Error('无效的token格式');
+                    }
+                    // 解码payload部分
+                    const payload = JSON.parse(atob(tokenParts[1]));
+                    const exp = payload.exp * 1000; // 转换为毫秒
+                    if (Date.now() > exp) {
+                        throw new Error('token已过期');
+                    }
+                    
+                    // 更新页面上的用户名显示
+                    const username = localStorage.getItem('username');
+                    if (username) {
+                        const userGreeting = document.getElementById('userGreeting');
+                        if (userGreeting) {
+                            userGreeting.textContent = `欢迎，${username}`;
+                        }
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Token验证失败:', error);
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('username');
+                    showToast('登录已过期，请重新登录', 'error');
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 1500);
+                    return false;
+                }
+            }
+            
+            // 如果未登录，直接返回，不执行后续代码
+            if (!checkLoginStatus()) {
+                return;
+            }
+            
+            if (typeof loadSmartRecommendations === 'function') {
+                loadSmartRecommendations();
+            }
+            
+            // showToast 函数已在全局作用域定义，这里不再重复定义
+            // 分类标签切换
+            const categoryTabs = document.querySelectorAll('.category-tab');
+            categoryTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    categoryTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    // 这里可以添加根据分类加载不同视频的逻辑
+                });
+            });
+            
+            // 视频卡片交互
+            const videoCards = document.querySelectorAll('.video-card');
+            videoCards.forEach(card => {
+                // 视频点击播放
+                card.addEventListener('click', function(e) {
+                    // 避免点击其他交互元素时触发视频播放
+                    if (!e.target.closest('.stat-item') && !e.target.closest('.user-info')) {
+                        alert('视频播放功能待实现');
+                    }
+                });
+                
+                // 点赞功能
+                const likeBtn = card.querySelector('.stat-item:nth-child(2)');
+                if (likeBtn) {
+                    likeBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        this.classList.toggle('liked');
+                        const likeCount = this.querySelector('span');
+                        if (this.classList.contains('liked')) {
+                            likeCount.textContent = (parseInt(likeCount.textContent) + 1).toString();
+                        } else {
+                            likeCount.textContent = (parseInt(likeCount.textContent) - 1).toString();
+                        }
+                    });
+                }
+                
+                // 收藏功能
+                const collectBtn = card.querySelector('.stat-item:nth-child(3)');
+                if (collectBtn) {
+                    collectBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        this.classList.toggle('collected');
+                        const collectCount = this.querySelector('span');
+                        if (this.classList.contains('collected')) {
+                            collectCount.textContent = (parseInt(collectCount.textContent) + 1).toString();
+                        } else {
+                            collectCount.textContent = (parseInt(collectCount.textContent) - 1).toString();
+                        }
+                    });
+                }
+                
+                // 举报功能
+                const reportBtn = card.querySelector('.stat-item.report');
+                if (reportBtn) {
+                    reportBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        // 存储当前要举报的视频ID
+                        const videoId = card.getAttribute('data-video-id');
+                        if (videoId) {
+                            localStorage.setItem('reportingVideoId', videoId);
+                        }
+                        document.getElementById('reportModal').style.display = 'flex';
+                    });
+                }
+            });
+            
+            // 加载更多按钮
+            const loadMoreBtn = document.querySelector('.load-more-btn');
+            loadMoreBtn.addEventListener('click', function() {
+                // 显示加载动画
+                this.innerHTML = '<i class="iconfont icon-loading"></i> 加载中...';
+                this.disabled = true;
+                
+                // 模拟加载延迟
+                setTimeout(() => {
+                    // 恢复按钮状态
+                    this.innerHTML = '加载更多视频';
+                    this.disabled = false;
+                    
+                    // 这里可以添加加载更多视频的逻辑
+                    alert('已加载全部视频');
+                }, 2000);
+            });
+            
+            // 举报模态框
+            const reportModal = document.getElementById('reportModal');
+            const closeReportModal = document.getElementById('closeReportModal');
+            const submitReport = document.getElementById('submitReport');
+            
+            closeReportModal.addEventListener('click', function() {
+                reportModal.style.display = 'none';
+            });
+            
+            submitReport.addEventListener('click', async function() {
+                const selectedReason = document.querySelector('input[name="reportReason"]:checked');
+                const reportNote = document.querySelector('.report-note textarea').value;
+                const videoId = localStorage.getItem('reportingVideoId');
+                
+                if (!selectedReason) {
+                    showToast('请选择举报原因', 'error');
+                    return;
+                }
+                
+                if (!videoId) {
+                    showToast('未找到要举报的视频', 'error');
+                    return;
+                }
+                
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    showToast('请先登录', 'error');
+                    return;
+                }
+                
+                try {
+                    // 调用服务器API提交举报
+                    const response = await fetch(`/api/videos/${videoId}/report`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            reason: selectedReason.value,
+                            note: reportNote || ''
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // 显示成功提示
+                        reportModal.style.display = 'none';
+                        showToast('举报已提交，我们会尽快处理', 'success');
+                        
+                        // 清空表单
+                        document.querySelectorAll('input[name="reportReason"]').forEach(radio => {
+                            radio.checked = false;
+                        });
+                        document.querySelector('.report-note textarea').value = '';
+                        localStorage.removeItem('reportingVideoId');
+                    } else {
+                        showToast(result.message || '举报提交失败', 'error');
+                    }
+                } catch (error) {
+                    console.error('提交举报失败:', error);
+                    showToast('网络错误，请稍后重试', 'error');
+                }
+            });
+            
+            // 点击模态框外部关闭
+            reportModal.addEventListener('click', function(e) {
+                if (e.target === reportModal) {
+                    reportModal.style.display = 'none';
+                }
+            });
+            
+            // 检查视频状态变化（用于管理端审核后同步）
+            function checkVideoStatusChanges() {
+                try {
+                    // 从localStorage读取最新的视频数据
+                    const videos = JSON.parse(localStorage.getItem('userVideos') || '[]');
+                    
+                    // 检查是否有视频状态发生变化
+                    let hasChanges = false;
+                    videos.forEach(video => {
+                        if (video.banned !== video.previousBanned || 
+                            video.reported !== video.previousReported) {
+                            hasChanges = true;
+                        }
+                    });
+                    
+                    // 如果有变化，重新加载视频列表
+                    if (hasChanges) {
+                        loadApprovedVideos();
+                    }
+                } catch (error) {
+                    console.error('检查视频状态变化失败:', error);
+                }
+            }
+            
+            // 定期检查视频状态变化（每5秒检查一次）
+            setInterval(checkVideoStatusChanges, 5000);
+            
+            // 热门推荐项点击
+            const trendingItems = document.querySelectorAll('.trending-item');
+            trendingItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    alert('视频播放功能待实现');
+                });
+            });
+            
+            // AI推荐标签点击
+            const aiTags = document.querySelectorAll('.ai-tag');
+            aiTags.forEach(tag => {
+                tag.addEventListener('click', function() {
+                    alert('正在加载标签：' + this.textContent + ' 的相关内容');
+                });
+            });
+            
+            // 初始化AI推荐图表
+            const recommendationsChart = echarts.init(document.getElementById('recommendationsChart'));
+            
+            const chartOption = {
+                title: {
+                    show: false
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: {
+                        type: 'shadow'
+                    }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'value',
+                    show: false
+                },
+                yAxis: {
+                    type: 'category',
+                    data: ['科幻', '文学', '历史', '哲学', '经济'],
+                    axisLine: {
+                        show: false
+                    },
+                    axisTick: {
+                        show: false
+                    },
+                    axisLabel: {
+                        fontSize: 12,
+                        color: '#666'
+                    }
+                },
+                series: [
+                    {
+                        name: '兴趣指数',
+                        type: 'bar',
+                        data: [85, 75, 65, 50, 60],
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                                {offset: 0, color: '#1a73e8'},
+                                {offset: 1, color: '#4285f4'}
+                            ]),
+                            borderRadius: [0, 4, 4, 0]
+                        },
+                        barWidth: '60%',
+                        label: {
+                            show: true,
+                            position: 'right',
+                            formatter: '{c}%',
+                            fontSize: 10,
+                            color: '#666'
+                        }
+                    }
+                ]
+            };
+            
+            recommendationsChart.setOption(chartOption);
+            
+            // 响应式图表
+            window.addEventListener('resize', function() {
+                recommendationsChart.resize();
+            });
+        });
+    </script>
+
+
+    <!-- Coze Web SDK -->
+    <script src="https://lf-cdn-tos.bytescm.com/obj/static/xitu_extension/static/coze_web_sdk/1.0.0/web.js"></script>
+    <script>
+      window.onload = function() {
+        // 初始化Coze Web SDK
+        if (typeof window.CozeWebSDK !== 'undefined') {
+          const webChatClient = window.CozeWebSDK.initWebChatClient({
+            bot_id: "7545799369434677294",
+            token: "pat_d9sL0CG3kkjwOXQedIInbBR6lUwH1HijuKWRecWvA0yl6GGUUSJ04XWXPVClWDVG"
+          });
+        }
+      };
+    </script>
+    
+    <!-- 评论模态框 -->
+    <div id="commentModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">评论</h3>
+                <button class="modal-close" onclick="closeCommentModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="commentsList" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+                    <!-- 评论列表将在这里动态加载 -->
+                </div>
+                <div style="border-top: 1px solid #eee; padding-top: 15px;">
+                    <textarea id="commentInput" placeholder="写下你的评论..." style="width: 100%; min-height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; resize: vertical;"></textarea>
+                    <button onclick="submitComment()" style="margin-top: 10px; padding: 8px 20px; background-color: #1a73e8; color: white; border: none; border-radius: 4px; cursor: pointer;">发表评论</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentCommentVideoId = null;
+        
+        // 打开评论模态框
+        function openCommentModal(videoId) {
+            currentCommentVideoId = videoId;
+            document.getElementById('commentModal').style.display = 'flex';
+            loadComments(videoId);
+        }
+        
+        // 关闭评论模态框
+        function closeCommentModal() {
+            document.getElementById('commentModal').style.display = 'none';
+            currentCommentVideoId = null;
+            document.getElementById('commentInput').value = '';
+        }
+        
+        // 加载评论列表
+        async function loadComments(videoId) {
+            const commentsList = document.getElementById('commentsList');
+            commentsList.innerHTML = '<div style="text-align: center; padding: 20px;">加载中...</div>';
+            
+            try {
+                const response = await fetch(`/api/videos/${videoId}/comments`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    if (result.comments.length === 0) {
+                        commentsList.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">暂无评论，快来发表第一条评论吧！</div>';
+                    } else {
+                        commentsList.innerHTML = result.comments.map(comment => `
+                            <div style="padding: 15px; border-bottom: 1px solid #eee;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <strong>${comment.username || '匿名用户'}</strong>
+                                    <span style="color: #999; font-size: 12px;">${new Date(comment.created_at).toLocaleString('zh-CN')}</span>
+                                </div>
+                                <div style="color: #333;">${comment.content}</div>
+                            </div>
+                        `).join('');
+                    }
+                } else {
+                    commentsList.innerHTML = '<div style="text-align: center; padding: 20px; color: #f00;">加载评论失败</div>';
+                }
+            } catch (error) {
+                console.error('加载评论失败:', error);
+                commentsList.innerHTML = '<div style="text-align: center; padding: 20px; color: #f00;">加载评论失败</div>';
+            }
+        }
+        
+        // 提交评论
+        async function submitComment() {
+            const content = document.getElementById('commentInput').value.trim();
+            if (!content) {
+                showToast('请输入评论内容', 'error');
+                return;
+            }
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showToast('请先登录', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/videos/${currentCommentVideoId}/comments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ content: content })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('commentInput').value = '';
+                    showToast('评论成功', 'success');
+                    loadComments(currentCommentVideoId);
+                    // 更新视频卡片上的评论数
+                    updateCommentCount(currentCommentVideoId);
+                } else {
+                    showToast(result.message || '评论失败', 'error');
+                }
+            } catch (error) {
+                console.error('提交评论失败:', error);
+                showToast('评论失败，请稍后重试', 'error');
+            }
+        }
+        
+        // 更新视频卡片上的评论数
+        function updateCommentCount(videoId) {
+            const commentBtn = document.querySelector(`.comment-btn[data-video-id="${videoId}"]`);
+            if (commentBtn) {
+                const commentCountSpan = commentBtn.querySelector('.comment-count');
+                if (commentCountSpan) {
+                    commentCountSpan.textContent = parseInt(commentCountSpan.textContent) + 1;
+                }
+            }
+        }
+        
+        // 点击模态框外部关闭
+        document.getElementById('commentModal')?.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeCommentModal();
+            }
+        });
+    </script>
+</body>
+</html>

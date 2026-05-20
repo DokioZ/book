@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的订单 - 图书智能宣传系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: #f5f7fa; color: #1f2937; }
+        .header { background: #fff; border-bottom: 1px solid #e5e7eb; }
+        .container-max { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+        .brand { color: #1a73e8; font-weight: 700; font-size: 28px; }
+        .nav-link { color: #374151; margin: 0 14px; text-decoration: none; }
+        .nav-link.active { color: #1a73e8; font-weight: 600; }
+        .order-card { background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:16px; margin-bottom:12px; }
+        .status { padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+        .status.pending { background:#fff7ed; color:#c2410c; }
+        .status.paid, .status.shipped { background:#eff6ff; color:#1d4ed8; }
+        .status.delivered { background:#ecfdf5; color:#047857; }
+        .status.cancelled, .status.refunded, .status.refunding { background:#f3f4f6; color:#374151; }
+    </style>
+</head>
+<body>
+<header class="header">
+    <div class="container-max flex items-center justify-between h-20">
+        <a class="brand" href="bookstore.html">图书智能宣传系统</a>
+        <nav>
+            <a href="bookstore.html" class="nav-link">图书商店</a>
+            <a href="create-video.html" class="nav-link">生成视频</a>
+            <a href="book-square.html" class="nav-link">图书广场</a>
+            <a href="user-center.html" class="nav-link">个人中心</a>
+            <a href="cart.html" class="nav-link">我的购物车</a>
+            <a href="orders.html" class="nav-link active">我的订单</a>
+        </nav>
+    </div>
+</header>
+<main class="container-max py-6">
+    <div class="bg-white border border-gray-200 rounded-xl p-4 mb-4 flex flex-wrap gap-2">
+        <button class="px-3 py-1 rounded-full border" data-status="">全部</button>
+        <button class="px-3 py-1 rounded-full border" data-status="paid">已支付</button>
+        <button class="px-3 py-1 rounded-full border" data-status="shipped">已发货</button>
+        <button class="px-3 py-1 rounded-full border" data-status="delivered">已送达</button>
+        <button class="px-3 py-1 rounded-full border" data-status="cancelled">已取消</button>
+        <button class="px-3 py-1 rounded-full border" data-status="refunding">退款中</button>
+    </div>
+    <div id="orderList"></div>
+</main>
+<script>
+const statusText = {
+    pending: '待处理',
+    paid: '已支付',
+    shipped: '已发货',
+    delivered: '已送达',
+    cancelled: '已取消',
+    refunding: '退款中',
+    refunded: '已退款'
+};
+let currentStatus = '';
+async function loadOrders() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        document.getElementById('orderList').innerHTML = '<div class="order-card">请先登录后查看订单。</div>';
+        return;
+    }
+    const query = currentStatus ? `?status=${encodeURIComponent(currentStatus)}&limit=50` : '?limit=50';
+    const res = await fetch(`/api/orders${query}`, { headers: { Authorization: `Bearer ${token}` }});
+    const data = await res.json();
+    const list = document.getElementById('orderList');
+    if (!res.ok || !data.success) {
+        list.innerHTML = `<div class="order-card">${data.message || '加载失败'}</div>`;
+        return;
+    }
+    if (!Array.isArray(data.orders) || !data.orders.length) {
+        list.innerHTML = '<div class="order-card">暂无订单</div>';
+        return;
+    }
+    list.innerHTML = data.orders.map(o => `
+        <div class="order-card">
+            <div class="flex justify-between items-center mb-2">
+                <div class="text-sm text-gray-500">订单号：${o.order_no || ('#' + o.id)}</div>
+                <span class="status ${o.status || 'pending'}">${statusText[o.status] || o.status}</span>
+            </div>
+            <div class="text-sm text-gray-600">下单时间：${o.created_at || '-'}</div>
+            <div class="text-sm text-gray-600">收货地址：${o.shipping_address || '-'}</div>
+            <div class="mt-2 font-semibold text-lg">实付：¥${Number(o.total_amount || 0).toFixed(2)}</div>
+            <div class="mt-3 flex gap-2">
+                <a class="px-3 py-1 bg-blue-600 text-white rounded" href="order-detail.html?id=${o.id}">查看详情</a>
+            </div>
+        </div>
+    `).join('');
+}
+document.querySelectorAll('[data-status]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        currentStatus = btn.getAttribute('data-status') || '';
+        loadOrders().catch(() => {});
+    });
+});
+loadOrders().catch(() => {});
+</script>
+</body>
+</html>

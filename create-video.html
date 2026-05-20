@@ -1,0 +1,1776 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://*; connect-src 'self' http://localhost:* https://* https://mon.zijieapi.com https://lf-cdn-tos.bytescm.com https://lf-cdn.coze.cn https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://*; style-src 'self' 'unsafe-inline' https://*; img-src 'self' data: http://localhost:* https://*; font-src 'self' https://*; media-src 'self' http://localhost:* https://*; frame-src 'self' http://localhost:* https://*;">
+    <title>图书智能宣传系统 - 生成视频</title>
+    <script src="/static/lib/echarts.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 修复Coze Web SDK和CSP问题 -->
+
+    
+    <!-- 全局状态和辅助函数 -->
+    <script>
+        // 全局状态管理
+        window.videoSystemState = {
+            isGenerating: false,
+            videoUrl: null,
+            workflow_id: '7633714095825600546',
+            currentTaskId: null
+        };
+        
+        // 工具函数：显示提示信息
+        function showToast(message, type = 'info') {
+            // 创建提示元素
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 py-3 px-4 rounded-lg shadow-lg transform translate-y-[-20px] opacity-0 transition-all duration-300 z-50';
+            
+            // 根据类型设置样式
+            if (type === 'success') {
+                toast.classList.add('bg-green-500', 'text-white');
+                toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
+            } else if (type === 'error') {
+                toast.classList.add('bg-red-500', 'text-white');
+                toast.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i>${message}`;
+            } else {
+                toast.classList.add('bg-blue-500', 'text-white');
+                toast.innerHTML = `<i class="fas fa-info-circle mr-2"></i>${message}`;
+            }
+            
+            // 添加到页面
+            document.body.appendChild(toast);
+            
+            // 显示动画
+            setTimeout(() => {
+                toast.classList.remove('translate-y-[-20px]', 'opacity-0');
+            }, 10);
+            
+            // 自动关闭
+            setTimeout(() => {
+                toast.classList.add('translate-y-[-20px]', 'opacity-0');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+        
+        // 工具函数：显示加载状态
+        function showLoadingIndicator() {
+            let indicator = document.getElementById('loadingIndicator');
+            if (!indicator) {
+                indicator = document.createElement('div');
+                indicator.id = 'loadingIndicator';
+                indicator.className = 'fixed bottom-4 right-4 bg-blue-500 text-white py-2 px-4 rounded-full shadow-lg flex items-center z-50';
+                indicator.innerHTML = '<div class="animate-spin mr-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>加载中...';
+                document.body.appendChild(indicator);
+            }
+            return indicator;
+        }
+        
+        // 工具函数：隐藏加载状态
+        function hideLoadingIndicator() {
+            const indicator = document.getElementById('loadingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+        
+        // 检查用户登录状态
+        function checkLoginStatus() {
+            const loggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const token = localStorage.getItem('token');
+            
+            if (loggedIn && token) {
+                try {
+                    const tokenParts = token.split('.');
+                    if (tokenParts.length === 3) {
+                        const payload = JSON.parse(atob(tokenParts[1]));
+                        const exp = payload.exp * 1000;
+                        if (Date.now() > exp) {
+                            throw new Error('token已过期');
+                        }
+                        
+                        const username = localStorage.getItem('username');
+                        if (username) {
+                            const userGreeting = document.getElementById('userGreeting');
+                            if (userGreeting) {
+                                userGreeting.textContent = `欢迎，${username}`;
+                            }
+                        }
+                        
+                        return true;
+                    }
+                } catch (error) {
+                    console.error('Token验证失败:', error);
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('username');
+                }
+            }
+            
+            return false;
+        }
+        
+        // 视频服务已准备就绪（使用服务端SDK）
+        function initializeVideoSystem() {
+            console.log('视频生成系统已使用服务端SDK初始化');
+            showToast('视频生成服务已就绪，可以开始使用', 'success');
+        }
+        
+        // 处理JSON视频文件
+        function processJsonVideoFile(jsonContent, bookInfo) {
+            console.log('准备发送JSON视频文件到服务器处理', { bookTitle: bookInfo.title });
+            
+            // 调用服务器API处理JSON视频文件
+            fetch('/api/video/process-json', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token') || 'demo-token'}`
+                },
+                body: JSON.stringify({
+                    jsonContent: jsonContent,
+                    bookInfo: bookInfo
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('视频处理任务已提交', data);
+                
+                if (data.taskId) {
+                    // 保存任务ID
+                    window.videoSystemState.currentTaskId = data.taskId;
+                    
+                    // 开始轮询任务状态
+                    showToast(`视频处理任务已开始，任务ID: ${data.taskId}`);
+                    startTaskPolling(data.taskId);
+                } else {
+                    console.error('服务器返回无效的任务ID', data);
+                    showToast('提交视频处理任务失败', 'error');
+                    
+                    // 恢复到原始状态
+                    const processingStatus = document.getElementById('jsonVideoProcessingStatus');
+                    if (processingStatus) {
+                        processingStatus.innerHTML = `<p class="text-red-500">处理失败：无法提交视频处理任务</p>`;
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('提交视频处理任务时发生错误', error);
+                showToast('提交视频处理任务失败：网络错误', 'error');
+                
+                // 恢复到原始状态
+                const processingStatus = document.getElementById('jsonVideoProcessingStatus');
+                if (processingStatus) {
+                    processingStatus.innerHTML = `<p class="text-red-500">处理失败：网络错误，请检查网络连接</p>`;
+                }
+            });
+        }
+        
+        // 轮询任务状态
+        function startTaskPolling(taskId) {
+            const maxAttempts = 60; // 最多轮询60次（约5分钟）
+            let attempts = 0;
+            
+            const pollingInterval = setInterval(() => {
+                attempts++;
+                
+                if (attempts > maxAttempts) {
+                    clearInterval(pollingInterval);
+                    
+                    const processingStatus = document.getElementById('jsonVideoProcessingStatus');
+                    if (processingStatus) {
+                        processingStatus.innerHTML = `
+                            <p class="text-amber-500">处理超时</p>
+                            <p class="text-sm text-gray-500">视频处理时间过长，请稍后再试</p>
+                        `;
+                    }
+                    showToast('视频处理超时，请稍后再试', 'warning');
+                    return;
+                }
+                
+                // 查询任务状态
+                fetch(`/api/video/task/${taskId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token') || 'demo-token'}`
+                    }
+                })
+                .then(response => response.json())
+                .then(taskData => {
+                    console.log('任务状态更新', taskData);
+                    
+                    const processingStatus = document.getElementById('jsonVideoProcessingStatus');
+                    if (processingStatus) {
+                        // 更新处理状态显示
+                        if (taskData.status === 'processing') {
+                            const progress = taskData.progress || 0;
+                            processingStatus.innerHTML = `
+                                <div class="animate-spin inline-block w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full mb-2"></div>
+                                <p>正在将视频发送到剪映小助手处理...</p>
+                                <p class="text-sm text-gray-500 mt-1">进度：${progress}%</p>
+                            `;
+                        } else if (taskData.task && taskData.task.status === 'completed') {
+                            clearInterval(pollingInterval);
+                            
+                            // 视频处理完成，显示结果
+                            processingStatus.innerHTML = `
+                                <div class="inline-block w-6 h-6 text-green-500 mb-2">✓</div>
+                                <p>视频处理完成！</p>
+                            `;
+                            
+                            // 显示成功提示
+                            showToast('视频已成功发送到剪映小助手处理并保存到剪映云空间', 'success');
+                            
+                            // 如果有视频URL，只返回路径不显示视频
+                            if (taskData.task.cloudVideoUrl) {
+                                setTimeout(() => {
+                                    const videoPlayer = document.getElementById('videoPlayer');
+                                    const videoPlaceholder = document.getElementById('videoPlaceholder');
+                                    
+                                    // 只设置视频URL但不显示视频播放器
+                                    videoPlayer.src = taskData.task.cloudVideoUrl;
+                                    
+                                    // 保持占位符显示状态
+                                    videoPlaceholder.innerHTML = '<p>视频已生成，仅返回路径不显示预览</p>';
+                                    videoPlaceholder.style.display = 'flex';
+                                    videoPlayer.style.display = 'none';
+                                    
+                                    // 如果处理状态区域存在，隐藏它
+                                    if (processingStatus) {
+                                        processingStatus.style.display = 'none';
+                                    }
+                                    
+                                    // 自动管理生成的视频文件
+                                    manageLocalVideoFile(taskId, 'get-info');
+                                }, 1000);
+                            }
+                        } else if (taskData.task && taskData.task.status === 'failed') {
+                            clearInterval(pollingInterval);
+                            
+                            processingStatus.innerHTML = `
+                                <p class="text-red-500">处理失败</p>
+                                <p class="text-sm text-gray-500">${taskData.task.error || '未知错误'}</p>
+                            `;
+                            showToast(`视频处理失败：${taskData.task.error || '未知错误'}`, 'error');
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('查询任务状态时发生错误', error);
+                });
+            }, 5000); // 每5秒查询一次
+        }
+        
+        // 管理本地视频文件（替代复制到剪映功能）
+    function manageLocalVideoFile(taskId, action = 'get-info') {
+        // 显示加载状态
+        showToast(action === 'get-info' ? '正在获取视频信息...' : '正在准备视频下载...');
+        
+        // 检查登录状态
+        const token = localStorage.getItem('token');
+        if (!token) {
+            showToast('请先登录后再操作', 'error');
+            return;
+        }
+        
+        // 调用API管理本地视频文件
+        fetch('/api/video/manage-file', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                taskId: taskId,
+                action: action
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                if (action === 'get-info') {
+                    // 显示视频信息
+                    showToast(`视频信息获取成功！\n标题: ${data.video?.title || '自动生成视频'}`, 'success');
+                    
+                    // 保存视频URL
+                    if (data.video?.url) {
+                        // 更新全局状态中的当前视频URL
+                        videoSystemState.currentVideoUrl = data.video.url;
+                        
+                        // 创建或更新视频播放器
+                        if (document.getElementById('videoPlayer')) {
+                            const videoPlayer = document.getElementById('videoPlayer');
+                            const videoPlaceholder = document.getElementById('videoPlaceholder');
+                            
+                            videoPlayer.src = data.video.url;
+                            videoPlayer.style.display = 'block';
+                            videoPlaceholder.style.display = 'none';
+                            
+                            // 尝试加载视频
+                            try {
+                                videoPlayer.load();
+                            } catch (loadError) {
+                                console.error('视频加载失败:', loadError);
+                            }
+                        }
+                        
+                        // 创建视频操作按钮
+                        createVideoPlayerButton(data.video.url, data.video.title);
+                        
+                        // 添加视频到视频列表（如果有）
+                        if (window.addToVideoList) {
+                            window.addToVideoList({
+                                title: data.video.title || `自动生成视频 - ${new Date().toLocaleString()}`,
+                                url: data.video.url,
+                                createdAt: data.video.createdAt || new Date().toISOString(),
+                                bookInfo: data.video.bookInfo
+                            });
+                        }
+                    }
+                    
+                    // 更新当前视频信息到状态
+                    videoSystemState.currentVideoInfo = data.video;
+                } else if (action === 'download') {
+                    // 处理下载请求
+                    if (data.downloadUrl) {
+                        showToast('视频下载链接已生成，即将开始下载', 'success');
+                        // 创建一个临时的a标签用于下载
+                        const link = document.createElement('a');
+                        link.href = data.downloadUrl;
+                        link.download = data.fileName;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }
+                }
+            } else {
+                // 显示错误提示
+                showToast(`操作失败：${data.message || '未知错误'}`, 'error');
+            }
+        })
+        .catch(error => {
+            // 显示错误提示
+            showToast('操作过程中发生错误，请检查网络连接后重试', 'error');
+            console.error('管理视频文件时出错:', error);
+        });
+    }
+    
+    // 创建视频播放按钮
+    function createVideoPlayerButton(videoUrl, videoTitle) {
+        // 查找或创建视频操作区域
+        let container = document.getElementById('video-actions');
+        if (!container) {
+            // 如果不存在，创建一个新的容器
+            container = document.createElement('div');
+            container.id = 'video-actions';
+            container.className = 'mt-4 flex gap-2';
+            
+            // 找到视频播放器的父元素并添加按钮
+            const videoContainer = document.getElementById('videoPlayer').parentNode;
+            if (videoContainer) {
+                videoContainer.appendChild(container);
+            }
+        }
+        
+        // 清除现有内容
+        container.innerHTML = '';
+        
+        // 创建播放按钮
+        const playButton = document.createElement('button');
+        playButton.className = 'btn btn-primary';
+        playButton.textContent = '播放视频';
+        playButton.onclick = () => {
+            // 在新标签页中打开视频
+            window.open(videoUrl, '_blank');
+        };
+        
+        // 创建下载按钮
+        const downloadButton = document.createElement('button');
+        downloadButton.className = 'btn btn-success';
+        downloadButton.textContent = '下载视频';
+        downloadButton.onclick = () => {
+            if (videoSystemState.currentTaskId) {
+                manageLocalVideoFile(videoSystemState.currentTaskId, 'download');
+            }
+        };
+        
+        // 添加到容器
+        container.appendChild(playButton);
+        container.appendChild(downloadButton);
+    }
+    
+    // 处理JSON文件并生成视频的函数
+    function processJsonAndGenerateVideo(jsonData, bookInfo) {
+        // 显示处理中的提示
+        showToast('正在处理视频JSON文件并准备生成视频...');
+        
+        // 创建处理状态区域
+        const processingArea = document.createElement('div');
+        processingArea.id = 'videoProcessingStatus';
+        processingArea.className = 'fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg z-50 w-72';
+        processingArea.innerHTML = `
+            <div class="font-medium text-lg mb-2">视频自动生成</div>
+            <div class="text-sm text-gray-500 mb-3">正在准备视频生成...</div>
+            <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                <div id="jsonProcessProgress" class="bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+            </div>
+            <div id="jsonProcessStatus" class="text-xs text-gray-400">准备中...</div>
+        `;
+        document.body.appendChild(processingArea);
+        
+        // 调用服务器API处理JSON并生成视频
+        fetch('/api/video/process-json', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                jsonContent: jsonData,
+                bookInfo: bookInfo
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.taskId) {
+                console.log('视频处理任务已提交:', data.taskId);
+                
+                // 更新状态显示
+                document.getElementById('jsonProcessStatus').textContent = '任务已提交，等待处理完成...';
+                document.getElementById('jsonProcessProgress').style.width = '20%';
+                
+                // 开始轮询任务状态
+                startTaskPolling(data.taskId);
+            } else {
+                console.error('提交视频处理任务失败:', data.message);
+                showToast(`视频处理任务提交失败: ${data.message}`, 'error');
+                
+                // 更新状态显示
+                document.getElementById('jsonProcessStatus').textContent = `失败: ${data.message || '未知错误'}`;
+                document.getElementById('jsonProcessStatus').className = 'text-xs text-red-500';
+                document.getElementById('jsonProcessProgress').style.width = '100%';
+                document.getElementById('jsonProcessProgress').className = 'bg-red-500 h-2 rounded-full';
+                
+                // 5秒后移除状态区域
+                setTimeout(() => {
+                    if (processingArea && processingArea.parentNode) {
+                        processingArea.parentNode.removeChild(processingArea);
+                    }
+                }, 5000);
+            }
+        })
+        .catch(error => {
+            console.error('提交视频处理任务时发生错误:', error);
+            showToast('视频处理任务提交失败，请稍后再试', 'error');
+            
+            // 更新状态显示
+            if (document.getElementById('jsonProcessStatus')) {
+                document.getElementById('jsonProcessStatus').textContent = '连接服务器失败';
+                document.getElementById('jsonProcessStatus').className = 'text-xs text-red-500';
+            }
+            if (document.getElementById('jsonProcessProgress')) {
+                document.getElementById('jsonProcessProgress').style.width = '100%';
+                document.getElementById('jsonProcessProgress').className = 'bg-red-500 h-2 rounded-full';
+            }
+            
+            // 5秒后移除状态区域
+            setTimeout(() => {
+                if (processingArea && processingArea.parentNode) {
+                    processingArea.parentNode.removeChild(processingArea);
+                }
+            }, 5000);
+        });
+    }
+    
+    // 轮询任务状态的函数
+    function startTaskPolling(taskId) {
+        let pollingInterval = null;
+        let attempts = 0;
+        const maxAttempts = 60; // 最多轮询60次（约5分钟）
+        
+        // 开始轮询
+        pollingInterval = setInterval(() => {
+            attempts++;
+            
+            // 检查是否达到最大尝试次数
+            if (attempts >= maxAttempts) {
+                clearInterval(pollingInterval);
+                showToast('视频处理超时，请稍后手动检查', 'error');
+                
+                // 更新状态显示
+                if (document.getElementById('jsonProcessStatus')) {
+                    document.getElementById('jsonProcessStatus').textContent = '处理超时';
+                    document.getElementById('jsonProcessStatus').className = 'text-xs text-yellow-500';
+                }
+                
+                return;
+            }
+            
+            // 调用服务器API查询任务状态
+            fetch(`/api/video/task/${taskId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.task) {
+                    const task = data.task;
+                    
+                    // 更新进度条（根据时间估算进度）
+                    const progress = Math.min(90, Math.floor((attempts / maxAttempts) * 80) + 20);
+                    if (document.getElementById('jsonProcessProgress')) {
+                        document.getElementById('jsonProcessProgress').style.width = `${progress}%`;
+                    }
+                    
+                    // 根据任务状态更新显示
+                    if (task.status === 'processing') {
+                        if (document.getElementById('jsonProcessStatus')) {
+                            document.getElementById('jsonProcessStatus').textContent = '视频正在处理中...';
+                        }
+                    } else if (task.status === 'completed' && task.cloudVideoUrl) {
+                        // 任务完成，停止轮询
+                        clearInterval(pollingInterval);
+                        
+                        // 更新进度为100%
+                        if (document.getElementById('jsonProcessProgress')) {
+                            document.getElementById('jsonProcessProgress').style.width = '100%';
+                        }
+                        if (document.getElementById('jsonProcessStatus')) {
+                            document.getElementById('jsonProcessStatus').textContent = '处理完成，正在复制到剪映草稿文件夹...';
+                        }
+                        
+                        // 显示成功提示
+                        showToast('视频处理完成！', 'success');
+                        
+                        // 自动复制视频到剪映草稿文件夹
+                        copyVideoToCapcut(taskId, task.cloudVideoUrl);
+                        
+                        // 5秒后移除状态区域
+                        setTimeout(() => {
+                            const processingArea = document.getElementById('videoProcessingStatus');
+                            if (processingArea && processingArea.parentNode) {
+                                processingArea.parentNode.removeChild(processingArea);
+                            }
+                        }, 5000);
+                    } else if (task.status === 'failed') {
+                        // 任务失败，停止轮询
+                        clearInterval(pollingInterval);
+                        
+                        // 更新状态显示
+                        if (document.getElementById('jsonProcessStatus')) {
+                            document.getElementById('jsonProcessStatus').textContent = `处理失败: ${task.error || '未知错误'}`;
+                            document.getElementById('jsonProcessStatus').className = 'text-xs text-red-500';
+                        }
+                        if (document.getElementById('jsonProcessProgress')) {
+                            document.getElementById('jsonProcessProgress').style.width = '100%';
+                            document.getElementById('jsonProcessProgress').className = 'bg-red-500 h-2 rounded-full';
+                        }
+                        
+                        // 显示失败提示
+                        showToast(`视频处理失败: ${task.error || '未知错误'}`, 'error');
+                        
+                        // 5秒后移除状态区域
+                        setTimeout(() => {
+                            const processingArea = document.getElementById('videoProcessingStatus');
+                            if (processingArea && processingArea.parentNode) {
+                                processingArea.parentNode.removeChild(processingArea);
+                            }
+                        }, 5000);
+                    }
+                } else {
+                    console.error('查询任务状态失败:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('查询任务状态时发生错误:', error);
+            });
+        }, 5000); // 每5秒查询一次
+    }
+    
+    // 处理工作流响应
+        function handleWorkflowResponse(response) {
+            console.log('收到工作流响应:', response);
+
+            // 清除进度定时器
+                if (window.progressInterval) {
+                    clearInterval(window.progressInterval);
+                    window.progressInterval = null;
+                }
+                
+                // 获取DOM元素
+                const progressFill = document.getElementById('progressFill');
+                const progressPercentage = document.getElementById('progressPercentage');
+                const jsonPlaceholder = document.getElementById('jsonPlaceholder');
+                const jsonResult = document.getElementById('jsonResult');
+                const jsonFileUrl = document.getElementById('jsonFileUrl');
+                const generateBtn = document.getElementById('generateBtn');
+                const progressContainer = document.getElementById('progressContainer');
+                
+                // 检查响应是否包含视频URL或JSON视频内容
+                if (response && response.data) {
+                    // 更新进度为100%
+                    if (progressFill && progressPercentage) {
+                        progressFill.style.width = '100%';
+                        progressPercentage.textContent = '100%';
+                    }
+                    
+                    // 延迟显示结果
+                    setTimeout(function() {
+                        // 准备图书信息文本
+                        let bookInfoText = '';
+                        if (response.data.book_info) {
+                            const bookInfo = response.data.book_info;
+                            bookInfoText = `<div class='book-info-card p-4 bg-blue-50 rounded-lg mb-4'>
+                                <h4 class='font-semibold text-lg mb-2'>图书信息</h4>
+                                <p><strong>书名:</strong> ${bookInfo.name}</p>
+                                ${bookInfo.content_preview ? `<p><strong>内容预览:</strong> ${bookInfo.content_preview}</p>` : ''}
+                                ${bookInfo.generated_at ? `<p><strong>生成时间:</strong> ${bookInfo.generated_at}</p>` : ''}
+                                ${bookInfo.video_type ? `<p><strong>视频类型:</strong> ${bookInfo.video_type}</p>` : ''}
+                                ${bookInfo.demo_mode ? `<p><strong>模式:</strong> <span class='text-yellow-600'>演示模式</span></p>` : ''}
+                            </div>`;
+                        }
+                        
+                        // 检查响应中是否包含JSON文件地址，保存到全局变量
+                        if (response.data.json_url || response.data.json_content) {
+                            console.log('检测到JSON文件地址，显示结果');
+                            
+                            // 如果有JSON URL，直接使用；否则使用JSON内容
+                            const jsonData = response.data.json_url || response.data.json_content;
+                            window.pendingJsonData = jsonData;
+                            window.pendingBookInfo = response.data.book_info;
+                            
+                            // 显示JSON地址
+                            jsonFileUrl.textContent = jsonData;
+                            jsonPlaceholder.style.display = 'none';
+                            jsonResult.style.display = 'flex';
+                            
+                            // 显示成功提示
+                            showToast('JSON文件地址已生成！', 'success');
+                    }
+                    
+                    // 准备元数据信息（如果有）
+                    let metadataInfoText = '';
+                    if (response.data.metadata) {
+                        const metadata = response.data.metadata;
+                        
+                        // 构建基本元数据信息
+                        metadataInfoText = `<div class='metadata-card p-3 bg-gray-50 rounded-lg text-sm text-gray-600 border border-gray-200 mb-4'>
+                            ${metadata.demo_version ? `<div class='metadata-item'><strong>演示版本:</strong> ${metadata.demo_version}</div>` : ''}
+                            ${metadata.generated_by ? `<div class='metadata-item'><strong>生成来源:</strong> ${metadata.generated_by}</div>` : ''}
+                        </div>`;
+                        
+                        // 添加SDK信息（如果有）
+                        if (metadata.sdk_info) {
+                            const sdkInfo = metadata.sdk_info;
+                            const sdkStatusClass = sdkInfo.initialized ? 'text-green-600' : 'text-red-600';
+                            const sdkStatusText = sdkInfo.initialized ? '已初始化' : '未初始化';
+                            
+                            metadataInfoText += `<div class='sdk-info-card p-3 bg-indigo-50 rounded-lg text-sm text-gray-700 border border-indigo-100 mb-4'>
+                                <div class='sdk-info-header font-medium text-indigo-700 mb-2'>SDK 信息</div>
+                                ${sdkInfo.version ? `<div class='metadata-item'><strong>SDK版本:</strong> ${sdkInfo.version}</div>` : ''}
+                                ${typeof sdkInfo.initialized !== 'undefined' ? `<div class='metadata-item'><strong>初始化状态:</strong> <span class='${sdkStatusClass}'>${sdkStatusText}</span></div>` : ''}
+                                ${typeof sdkInfo.webChatClientExists !== 'undefined' ? `<div class='metadata-item'><strong>WebChatClient:</strong> ${sdkInfo.webChatClientExists ? '已创建' : '未创建'}</div>` : ''}
+                            </div>`;
+                        }
+                        
+                        // 添加可用方法列表（如果有）
+                        if (metadata.available_methods && metadata.available_methods.length > 0) {
+                            metadataInfoText += `<div class='methods-info-card p-3 bg-purple-50 rounded-lg text-sm text-gray-700 border border-purple-100 mb-4'>
+                                <div class='methods-info-header font-medium text-purple-700 mb-2'>可用方法</div>
+                                <div class='methods-list text-xs font-mono bg-white p-2 rounded border border-gray-100 overflow-x-auto whitespace-nowrap'>
+                                    ${metadata.available_methods.join(', ')}
+                                </div>
+                            </div>`;
+                        }
+                    }
+                    
+                    // 准备诊断信息（如果有）
+                    let diagnosticInfoText = '';
+                    if (response.diagnostic_info) {
+                        const diagnosticInfo = response.diagnostic_info;
+                        
+                        // 构建诊断信息卡片
+                        diagnosticInfoText = `<div class='diagnostic-info-card p-3 bg-amber-50 rounded-lg text-sm text-gray-700 border border-amber-100 mb-4'>
+                            <div class='diagnostic-info-header font-medium text-amber-700 mb-2'>诊断信息</div>
+                            ${diagnosticInfo.sdkVersion ? `<div class='metadata-item'><strong>SDK版本:</strong> ${diagnosticInfo.sdkVersion}</div>` : ''}
+                            ${typeof diagnosticInfo.initialized !== 'undefined' ? `<div class='metadata-item'><strong>SDK初始化:</strong> ${diagnosticInfo.initialized ? '成功' : '失败'}</div>` : ''}
+                            ${diagnosticInfo.workflowId ? `<div class='metadata-item'><strong>工作流ID:</strong> ${diagnosticInfo.workflowId || '未设置'}</div>` : ''}
+                            ${typeof diagnosticInfo.workflowIdExists !== 'undefined' ? `<div class='metadata-item'><strong>工作流ID有效:</strong> ${diagnosticInfo.workflowIdExists ? '是' : '否'}</div>` : ''}
+                            ${diagnosticInfo.callParams ? `<div class='metadata-item'><strong>调用参数:</strong> <div class='text-xs font-mono bg-white p-2 rounded mt-1 overflow-x-auto'>${JSON.stringify(diagnosticInfo.callParams, null, 2).replace(/"/g, '&quot;')}</div></div>` : ''}
+                        </div>`;
+                    }
+                
+                    // 添加自定义CSS样式
+                    let styleElement = document.getElementById('bookInfoStyle');
+                    if (!styleElement) {
+                        styleElement = document.createElement('style');
+                        styleElement.id = 'bookInfoStyle';
+                        styleElement.textContent = `
+                            .book-info-card {
+                                border-left: 4px solid #1a73e8;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                            }
+                            .book-info-card p {
+                                margin-bottom: 8px;
+                                line-height: 1.5;
+                            }
+                            .book-info-card p:last-child {
+                                margin-bottom: 0;
+                            }
+                            .metadata-card, .sdk-info-card, .methods-info-card, .diagnostic-info-card {
+                                box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+                            }
+                            .metadata-item {
+                                margin-bottom: 5px;
+                            }
+                            .metadata-item:last-child {
+                                margin-bottom: 0;
+                            }
+                            .methods-list {
+                                max-height: 60px;
+                                overflow-y: auto;
+                            }
+                            .sdk-info-header, .methods-info-header, .diagnostic-info-header {
+                                font-size: 12px;
+                                font-weight: 500;
+                                text-transform: uppercase;
+                                letter-spacing: 0.5px;
+                            }
+                        `;
+                        document.head.appendChild(styleElement);
+                    }
+                    // 创建或获取图书信息容器
+                    let bookInfoContainer = document.getElementById('bookInfoContainer');
+                    if (!bookInfoContainer) {
+                        bookInfoContainer = document.createElement('div');
+                        bookInfoContainer.id = 'bookInfoContainer';
+                        bookInfoContainer.className = 'mt-4 mb-6';
+                    }
+                    
+                    // 组合图书信息、元数据信息和诊断信息
+                    let combinedInfo = '';
+                    if (bookInfoText) {
+                        combinedInfo += bookInfoText;
+                    }
+                    if (metadataInfoText) {
+                        combinedInfo += metadataInfoText;
+                    }
+                    if (diagnosticInfoText) {
+                        combinedInfo += diagnosticInfoText;
+                    }
+                    
+                    // 如果有信息，添加到容器
+                    if (combinedInfo) {
+                        bookInfoContainer.innerHTML = combinedInfo;
+                        bookInfoContainer.style.display = 'block';
+                    } else {
+                        bookInfoContainer.style.display = 'none';
+                        }
+                    
+                    if (videoPlaceholder && videoPlayer) {
+                        // 确保视频播放器的父容器也是可见的
+                        const videoContainer = videoPlayer.parentElement;
+                        if (videoContainer) {
+                            videoContainer.style.display = 'block';
+                        }
+                        
+                        // 检查是否是JSON视频文件
+                        if (response.data.json_video_content) {
+                            console.log('收到JSON格式视频内容，准备处理');
+                            
+                            // 显示处理中的提示
+                            showToast('正在处理视频文件，将发送到剪映小助手...');
+                            
+                            // 创建一个处理状态显示区域
+                            const processingStatus = document.createElement('div');
+                            processingStatus.id = 'jsonVideoProcessingStatus';
+                            processingStatus.className = 'p-4 bg-purple-50 rounded-lg text-center mb-4';
+                            processingStatus.innerHTML = `
+                                <div class="animate-spin inline-block w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full mb-2"></div>
+                                <p>正在将视频发送到剪映小助手处理...</p>
+                                <p class="text-sm text-gray-500 mt-1">这可能需要几分钟时间</p>
+                            `;
+                            
+                            // 将处理状态区域插入到视频播放器之前
+                            if (videoPlayer && videoPlayer.parentNode) {
+                                videoPlayer.parentNode.insertBefore(processingStatus, videoPlayer);
+                                videoPlaceholder.style.display = 'none';
+                                videoPlayer.style.display = 'none';
+                            }
+                            
+                            // 调用服务器API处理JSON视频文件
+                            processJsonVideoFile(response.data.json_video_content, response.data.book_info);
+                        } else if (response.data.video_url) {
+                            // 保存视频URL
+                            window.videoSystemState.videoUrl = response.data.video_url;
+                            
+                            // 设置视频源
+                            videoPlayer.src = response.data.video_url;
+                            
+                            // 显示视频播放器，隐藏占位符
+                            videoPlaceholder.style.display = 'none';
+                            videoPlayer.style.display = 'block';
+                            
+                            // 添加视频错误事件监听器，帮助调试
+                            videoPlayer.addEventListener('error', function(e) {
+                                console.error('视频播放错误:', e);
+                                console.error('错误代码:', videoPlayer.error ? videoPlayer.error.code : '未知');
+                                console.error('当前视频URL:', videoPlayer.src);
+                                
+                                // 尝试使用备用视频源
+                                if (videoPlayer.src.includes('sample-videos.com')) {
+                                    try {
+                                        // 备用视频源列表
+                                        const fallbackSources = [
+                                            'https://storage.googleapis.com/web-dev-assets/video-and-source-tags/chrome.mp4',
+                                            'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4'
+                                        ];
+                                        
+                                        // 查找当前视频源在列表中的索引
+                                        const currentIndex = fallbackSources.findIndex(src => videoPlayer.src.includes(src.split('/').pop().split('?')[0]));
+                                        const nextIndex = currentIndex === -1 || currentIndex >= fallbackSources.length - 1 ? 0 : currentIndex + 1;
+                                        
+                                        console.log(`尝试切换到备用视频源 (${nextIndex+1}/${fallbackSources.length})`);
+                                        videoPlayer.src = fallbackSources[nextIndex];
+                                        videoPlayer.load();
+                                        
+                                        showToast('视频加载遇到问题，正在尝试备用视频源...', 'warning');
+                                    } catch (fallbackError) {
+                                        console.error('备用视频源切换失败:', fallbackError);
+                                        showToast('视频加载遇到问题，请稍后再试', 'error');
+                                    }
+                                } else {
+                                    showToast('视频加载遇到问题，请稍后再试', 'error');
+                                }
+                            });
+                            
+                            // 添加视频加载完成事件
+                            videoPlayer.addEventListener('loadeddata', function() {
+                                console.log('视频数据加载完成，可以开始播放');
+                            });
+                            
+                            // 尝试加载视频
+                            try {
+                                console.log('设置视频源:', videoPlayer.src);
+                                videoPlayer.load();
+                                
+                                // 添加视频源加载事件监听器
+                                videoPlayer.addEventListener('loadedmetadata', function() {
+                                    console.log('视频元数据加载成功:', videoPlayer.duration, '秒');
+                                });
+                                
+                                videoPlayer.addEventListener('canplaythrough', function() {
+                                    console.log('视频可以流畅播放');
+                                });
+                                
+                                // 添加短暂延迟后尝试自动播放（浏览器可能会阻止自动播放）
+                                setTimeout(function() {
+                                    try {
+                                        videoPlayer.play().then(function() {
+                                            console.log('视频自动播放尝试成功');
+                                        }).catch(function(playError) {
+                                            console.log('视频自动播放被阻止（浏览器安全策略）:', playError);
+                                            // 这是正常的，用户需要点击播放按钮
+                                            if (window.videoSystemState.isDemoMode) {
+                                                showToast('演示模式：请点击播放按钮观看视频', 'info');
+                                            }
+                                        });
+                                    } catch (autoPlayError) {
+                                        console.log('自动播放尝试异常:', autoPlayError);
+                                    }
+                                }, 500);
+                            } catch (loadError) {
+                                console.error('视频加载失败:', loadError);
+                                    // 在演示模式下提供更友好的错误提示
+                                    if (window.videoSystemState.isDemoMode) {
+                                        showToast('演示模式：视频服务当前不可用，您可以查看下方的图书信息', 'info');
+                                    } else {
+                                        showToast('视频加载失败，请检查网络连接或稍后重试', 'error');
+                                    }
+                                }
+                        }
+                        
+                        // 添加图书信息容器到视频播放器下方
+                        if (bookInfoText && !document.body.contains(bookInfoContainer)) {
+                            videoPlayer.parentNode.insertBefore(bookInfoContainer, videoPlayer.nextSibling);
+                        }
+                        
+                        // 添加视频信息浮层，使用响应中的message
+                        const videoInfo = document.createElement('div');
+                        videoInfo.className = 'absolute inset-0 flex flex-col items-center justify-center bg-black/30 text-white p-4 text-center';
+                        const message = response.data.message || '视频生成成功！';
+                        videoInfo.innerHTML = `<p class="text-lg font-medium mb-2">图书宣传视频</p><p class="mb-4">${message}</p><button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors" onclick="this.parentElement.remove()">关闭提示</button>`;
+                        videoPlayer.parentNode.appendChild(videoInfo);
+                    }
+                    
+                    // 重置按钮状态
+                    if (generateBtn) {
+                        generateBtn.disabled = false;
+                        generateBtn.style.opacity = '1';
+                    }
+                    
+                    if (progressContainer) {
+                        progressContainer.style.display = 'none';
+                    }
+                    
+                    showToast('视频生成成功！', 'success');
+                    window.videoSystemState.isGenerating = false;
+                }, 1000);
+            } else if (response && response.error) {
+                // 处理错误
+                showToast('视频生成失败: ' + (response.error.message || '未知错误'), 'error');
+                
+                // 重置按钮状态
+                if (generateBtn) {
+                    generateBtn.disabled = false;
+                    generateBtn.style.opacity = '1';
+                }
+                
+                if (progressContainer) {
+                    progressContainer.style.display = 'none';
+                }
+                
+                window.videoSystemState.isGenerating = false;
+            }
+        }
+        
+        // 生成视频函数已移至generate-video.js文件中
+
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', function() {
+            // 已移至文件底部的initializeVideoSystem函数
+        });
+    </script>
+
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            overflow-x: hidden;
+        }
+        
+        /* 主容器 */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* 顶部导航栏 */
+        header {
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a73e8;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo-icon {
+            font-size: 32px;
+            margin-right: 10px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav-link {
+            text-decoration: none;
+            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-link:hover,
+        .nav-link.active {
+            color: #1a73e8;
+        }
+        
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .search-btn, .cart-btn, .user-btn, .login-btn, .register-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #333;
+            cursor: pointer;
+            transition: color 0.3s;
+            padding: 8px;
+            border-radius: 50%;
+        }
+        
+        .search-btn:hover, .cart-btn:hover, .user-btn:hover {
+            background-color: #f0f0f0;
+            color: #1a73e8;
+        }
+        
+        .login-btn, .register-btn {
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        
+        .login-btn {
+            color: #1a73e8;
+            background-color: transparent;
+        }
+        
+        .register-btn {
+            color: #fff;
+            background-color: #1a73e8;
+        }
+        
+        /* 页面标题 */
+        .page-title {
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .page-title h1 {
+            font-size: 36px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .page-title p {
+            font-size: 16px;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        /* 内容区域布局 */
+        .content-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+        
+        /* 左侧表单 */
+        .form-section {
+            background-color: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input[type="text"]:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #1a73e8;
+        }
+        
+        .form-group textarea {
+            height: 120px;
+            resize: vertical;
+            min-height: 80px;
+            max-height: 300px;
+        }
+        
+        /* 选项组 */
+        .options-group {
+            margin-bottom: 20px;
+        }
+        
+        .options-group h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #333;
+        }
+        
+        .option-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .option-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .option-item:hover {
+            border-color: #1a73e8;
+            background-color: #f8fbff;
+        }
+        
+        .option-item.selected {
+            border-color: #1a73e8;
+            background-color: #e8f0fe;
+        }
+        
+        .option-item input[type="radio"] {
+            margin-right: 8px;
+        }
+        
+        .option-item input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        
+        /* 表单提示信息 */
+        .form-tip {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            color: #0369a1;
+        }
+        
+        .form-tip i {
+            margin-right: 8px;
+            color: #0ea5e9;
+        }
+        
+        .form-tip p {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        /* 生成按钮 */
+        .generate-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .generate-btn:hover:not(:disabled) {
+            background-color: #1557b0;
+        }
+        
+        .generate-btn:disabled {
+            cursor: not-allowed;
+            background-color: #a0aec0;
+        }
+        
+        /* 右侧视频预览 */
+        .video-section {
+            background-color: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            position: relative;
+        }
+        
+        .json-container {
+            width: 100%;
+            min-height: 200px;
+            background-color: #f7fafc;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .json-placeholder {
+            width: 100%;
+            height: 100%;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f7fafc;
+            border: 2px dashed #e1e5e9;
+            border-radius: 12px;
+        }
+        
+        .json-placeholder i {
+            font-size: 48px;
+            color: #cbd5e0;
+            margin-bottom: 16px;
+        }
+        
+        .json-placeholder p {
+            color: #718096;
+            text-align: center;
+        }
+        
+        .json-result {
+            width: 100%;
+            min-height: 200px;
+            padding: 20px;
+            display: none;
+            flex-direction: column;
+        }
+        
+        .json-header {
+            margin-bottom: 16px;
+        }
+        
+        .json-header h3 {
+            color: #333;
+            font-size: 18px;
+            margin: 0;
+        }
+        
+        .json-url-container {
+            flex: 1;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            padding: 16px;
+            word-break: break-all;
+        }
+        
+        .json-url {
+            color: #3182ce;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+        }
+        
+        /* 进度条 */
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background-color: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background-color: #1a73e8;
+            transition: width 0.3s;
+        }
+        
+        .progress-text {
+            text-align: center;
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        /* 功能按钮组 */
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            background-color: white;
+            color: #333;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            border-color: #1a73e8;
+            color: #1a73e8;
+        }
+        
+
+        
+        /* 页脚 */
+        footer {
+            background-color: #2d3748;
+            color: white;
+            padding: 40px 0;
+            margin-top: 60px;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 40px;
+        }
+        
+        .footer-logo {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .footer-links h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .footer-links ul {
+            list-style: none;
+        }
+        
+        .footer-links li {
+            margin-bottom: 8px;
+        }
+        
+        .footer-links a {
+            color: #e2e8f0;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: white;
+        }
+        
+        .footer-bottom {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #4a5568;
+            text-align: center;
+            color: #a0aec0;
+            font-size: 14px;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .content-wrapper {
+                grid-template-columns: 1fr;
+            }
+            
+            .video-container {
+                height: 300px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .option-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* 加载动画 */
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        /* 视频预览区域样式 */
+        .video-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            padding: 40px 20px;
+            margin: 20px 0;
+            background-color: #fafafa;
+            color: #666;
+            text-align: center;
+            min-height: 200px;
+        }
+        
+        .video-placeholder i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            color: #ccc;
+        }
+        
+        .video-placeholder p {
+            margin: 4px 0;
+        }
+        
+        /* 视频播放器样式 */
+        .video-player {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        /* 加载动画样式 */
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        
+        /* 错误信息样式 */
+        .error-details {
+            font-size: 14px;
+            color: #ff6b6b;
+            margin-top: 8px;
+        }
+        
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header>
+        <div class="container header-content">
+            <a href="index.html" class="logo">
+                <span class="logo-icon"><i class="fas fa-book"></i></span>
+                图书智能宣传系统
+            </a>
+            
+            <nav class="nav-links">
+                <a href="bookstore.html" class="nav-link">图书商店</a>
+                <a href="create-video.html" class="nav-link active">生成视频</a>
+                <a href="user-center.html" class="nav-link">个人中心</a>
+                <a href="book-square.html" class="nav-link">图书广场</a>
+                <a href="cart.html" class="nav-link">我的购物车</a>
+                <a href="orders.html" class="nav-link">我的订单</a>
+            </nav>
+            
+            <div class="user-actions">
+                <button class="search-btn"><i class="fas fa-search"></i></button>
+                <a href="cart.html" class="cart-btn" style="text-decoration: none; display: inline-block;"><i class="fas fa-shopping-cart"></i></a>
+                <button class="user-btn"><i class="fas fa-user"></i></button>
+                <span id="userGreeting"></span>
+                <button class="login-btn">登录</button>
+                <button class="register-btn">注册</button>
+            </div>
+        </div>
+    </header>
+    
+    <!-- 主要内容区域 -->
+    <main class="container">
+        <!-- 页面标题 -->
+        <div class="page-title">
+            <h1>生成图书宣传视频</h1>
+            <p>请输入书名、作者名与IP名，即可生成专业的图书宣传视频，帮助您更好地推广图书</p>
+        </div>
+        
+        <!-- 内容布局 -->
+        <div class="content-wrapper">
+            <!-- 左侧表单区域 -->
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="bookName">图书名称</label>
+                    <input type="text" id="bookName" placeholder="请输入图书名称" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="authorName">作者名称</label>
+                    <input type="text" id="authorName" placeholder="请输入作者名称" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="ipName">IP名称</label>
+                    <input type="text" id="ipName" placeholder="请输入IP名称（如：云智AI社）" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bookContent">图书内容简介（选填）</label>
+                    <textarea id="bookContent" placeholder="请输入图书内容（选填）"></textarea>
+                </div>
+                
+                <div class="form-tip">
+                    <p><i class="fas fa-lightbulb"></i> 提示：填写的图书内容越详细，生成的视频效果越好</p>
+                </div>
+                
+                <button id="generateBtn" class="generate-btn">
+                    <i class="fas fa-magic mr-2"></i>生成视频
+                </button>
+            </div>
+            
+            <!-- 右侧JSON结果显示区域 -->
+            <div class="video-section">
+                <div class="json-container">
+                    <div id="jsonPlaceholder" class="json-placeholder">
+                        <i class="fas fa-file-code"></i>
+                        <p>生成的JSON文件地址将在这里显示</p>
+                        <p>请填写图书信息并点击生成按钮</p>
+                    </div>
+                    <div id="jsonResult" class="json-result">
+                        <div class="json-header">
+                            <h3>JSON文件地址</h3>
+                        </div>
+                        <div class="json-url-container">
+                            <p id="jsonFileUrl" class="json-url"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="progressContainer" class="progress-container">
+                    <div id="progressFill" class="progress-fill"></div>
+                </div>
+                
+                <div class="progress-text">
+                    <span id="progressPercentage">0%</span>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="copyJsonBtn" class="action-btn">
+                        <i class="fas fa-copy mr-2"></i>复制JSON地址
+                    </button>
+                    <button id="jumpToJsonBtn" class="action-btn">
+                        <i class="fas fa-external-link-alt mr-2"></i>跳转查看
+                    </button>
+                    <button id="regenerateBtn" class="action-btn">
+                        <i class="fas fa-redo-alt mr-2"></i>重新生成
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+            // 添加复制JSON地址功能
+            document.addEventListener('DOMContentLoaded', function() {
+                // 添加复制JSON地址功能
+                const copyJsonBtn = document.getElementById('copyJsonBtn');
+                if (copyJsonBtn) {
+                    copyJsonBtn.addEventListener('click', function() {
+                        const jsonFileUrl = document.getElementById('jsonFileUrl');
+                        if (jsonFileUrl) {
+                            // 获取文本内容并去除首尾空白
+                            const urlText = jsonFileUrl.textContent ? jsonFileUrl.textContent.trim() : '';
+                            // 也可以尝试从window.videoSystemState获取
+                            const urlFromState = (window.videoSystemState && window.videoSystemState.jsonUrl) ? window.videoSystemState.jsonUrl.trim() : '';
+                            const urlToCopy = urlText || urlFromState;
+                            
+                            if (urlToCopy && urlToCopy !== '未找到工作流返回地址' && urlToCopy !== '未找到') {
+                                navigator.clipboard.writeText(urlToCopy)
+                                    .then(() => {
+                                        showToast('JSON地址已复制到剪贴板！', 'success');
+                                    })
+                                    .catch(err => {
+                                        // 降级方案：使用传统方法复制
+                                        try {
+                                            const textArea = document.createElement('textarea');
+                                            textArea.value = urlToCopy;
+                                            textArea.style.position = 'fixed';
+                                            textArea.style.opacity = '0';
+                                            document.body.appendChild(textArea);
+                                            textArea.select();
+                                            document.execCommand('copy');
+                                            document.body.removeChild(textArea);
+                                            showToast('JSON地址已复制到剪贴板！', 'success');
+                                        } catch (fallbackErr) {
+                                            showToast('复制失败，请手动复制', 'error');
+                                            console.error('复制JSON地址失败:', err, fallbackErr);
+                                        }
+                                    });
+                            } else {
+                                showToast('没有可复制的JSON地址', 'warning');
+                            }
+                        } else {
+                            showToast('没有可复制的JSON地址', 'warning');
+                        }
+                    });
+                }
+                
+                // 添加跳转查看功能
+                const jumpToJsonBtn = document.getElementById('jumpToJsonBtn');
+                if (jumpToJsonBtn) {
+                    jumpToJsonBtn.addEventListener('click', function() {
+                        const jsonFileUrl = document.getElementById('jsonFileUrl');
+                        if (jsonFileUrl) {
+                            // 获取文本内容并去除首尾空白
+                            const urlText = jsonFileUrl.textContent ? jsonFileUrl.textContent.trim() : '';
+                            // 也可以尝试从window.videoSystemState获取
+                            const urlFromState = (window.videoSystemState && window.videoSystemState.jsonUrl) ? window.videoSystemState.jsonUrl.trim() : '';
+                            const urlToOpen = urlText || urlFromState;
+                            
+                            if (urlToOpen && urlToOpen !== '未找到工作流返回地址' && urlToOpen !== '未找到' && urlToOpen.startsWith('http')) {
+                                window.open(urlToOpen, '_blank');
+                            } else {
+                                showToast('没有可跳转的JSON地址或地址格式不正确', 'warning');
+                            }
+                        } else {
+                            showToast('没有可跳转的JSON地址', 'warning');
+                        }
+                    });
+                }
+                
+                // 添加重新生成功能
+                const regenerateBtn = document.getElementById('regenerateBtn');
+                if (regenerateBtn) {
+                    regenerateBtn.addEventListener('click', function() {
+                        // 检查是否正在生成中
+                        if (window.videoSystemState && window.videoSystemState.isGenerating) {
+                            showToast('正在生成中，请稍候...', 'info');
+                            return;
+                        }
+                        
+                        // 检查是否有图书名称
+                        const bookNameInput = document.getElementById('bookName');
+                        const authorNameInput = document.getElementById('authorName');
+                        const ipNameInput = document.getElementById('ipName');
+                        if (!bookNameInput || !bookNameInput.value.trim()) {
+                            showToast('请先输入图书名称', 'warning');
+                            return;
+                        }
+                        if (!authorNameInput || !authorNameInput.value.trim()) {
+                            showToast('请先输入作者名称', 'warning');
+                            return;
+                        }
+                        if (!ipNameInput || !ipNameInput.value.trim()) {
+                            showToast('请先输入IP名称', 'warning');
+                            return;
+                        }
+                        
+                        // 调用generateVideo函数重新生成JSON数据
+                        if (typeof generateVideo === 'function') {
+                            // 重置相关UI状态（可选）
+                            const jsonResult = document.getElementById('jsonResult');
+                            const jsonPlaceholder = document.getElementById('jsonPlaceholder');
+                            if (jsonResult) {
+                                jsonResult.style.display = 'none';
+                            }
+                            if (jsonPlaceholder) {
+                                jsonPlaceholder.style.display = 'flex';
+                                jsonPlaceholder.innerHTML = '<div class="loading-spinner"></div><p>正在生成新的视频...</p>';
+                            }
+                            
+                            // 调用生成函数
+                            generateVideo();
+                        } else {
+                            showToast('重新生成功能暂不可用', 'error');
+                        }
+                    });
+                }
+            });
+        </script>
+            </div>
+        </div>
+        
+
+    </main>
+    
+    <!-- 页脚 -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-logo">
+                <span class="logo-icon"><i class="fas fa-book"></i></span>
+                图书智能宣传系统
+            </div>
+            
+            <div class="footer-links">
+                <h4>功能导航</h4>
+                <ul>
+                    <li><a href="book-list.html">图书列表</a></li>
+                    <li><a href="create-video.html">生成视频</a></li>
+                    <li><a href="user-center.html">个人中心</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-links">
+                <h4>帮助支持</h4>
+                <ul>
+                    <li><a href="#">使用指南</a></li>
+                    <li><a href="#">常见问题</a></li>
+                    <li><a href="#">联系我们</a></li>
+                    <li><a href="#">关于我们</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-links">
+                <h4>关注我们</h4>
+                <ul>
+                    <li><a href="#">微信公众号</a></li>
+                    <li><a href="#">微博</a></li>
+                    <li><a href="#">抖音</a></li>
+                    <li><a href="#">B站</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="container footer-bottom">
+            <p>© 2023 图书智能宣传系统 版权所有</p>
+        </div>
+    </footer>
+    <script>
+        // 页面加载完成后初始化视频系统
+        window.addEventListener('DOMContentLoaded', function() {
+            initializeVideoSystem();
+        });
+    </script>
+    <script src="generate-video.js"></script>
+</body>
+</html>

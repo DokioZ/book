@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单详情 - 图书智能宣传系统</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <style>
+        body { background:#f5f7fa; }
+        .container-max { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+        .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; margin-bottom:14px; }
+        .timeline-item { position: relative; padding-left: 22px; padding-bottom: 14px; }
+        .timeline-item:before { content:''; position:absolute; left:7px; top:3px; width:9px; height:9px; border-radius:50%; background:#1d4ed8; }
+        .timeline-item:after { content:''; position:absolute; left:11px; top:14px; width:1px; height:calc(100% - 14px); background:#d1d5db; }
+        .timeline-item:last-child:after { display:none; }
+        .timeline-item.exception:before { background:#dc2626; }
+        .route-map-wrap { margin-top: 14px; border:1px solid #e5e7eb; border-radius:10px; padding:10px; background:#fafafa; }
+        .route-map-legend { display:flex; gap:12px; font-size:12px; color:#6b7280; margin-top:8px; }
+        .route-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:5px; }
+    </style>
+</head>
+<body>
+<div class="container-max py-6">
+    <a class="text-blue-600" href="orders.html">← 返回我的订单</a>
+    <div id="root" class="mt-4"></div>
+</div>
+<script>
+function getId() {
+    const p = new URLSearchParams(location.search);
+    return Number(p.get('id') || 0);
+}
+function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, (m) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function statusZh(v) {
+    const m = {
+        pending: '待处理',
+        paid: '已支付',
+        shipped: '已发货',
+        delivered: '已送达',
+        cancelled: '已取消',
+        refunding: '退款中',
+        refunded: '已退款',
+        picked: '已揽收',
+        in_transit: '运输中',
+        delivering: '派送中',
+        signed: '已签收',
+        exception: '异常'
+    };
+    return m[String(v || '').trim()] || String(v || '-');
+}
+function toNum(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : NaN;
+}
+function buildRouteSvg(routeNodes = []) {
+    const pts = routeNodes
+        .map((n) => ({ lng: toNum(n.lng), lat: toNum(n.lat), done: Number(n.is_done || 0) === 1 }))
+        .filter((p) => Number.isFinite(p.lng) && Number.isFinite(p.lat));
+    if (pts.length < 2) return '';
+    const minLng = Math.min(...pts.map((p) => p.lng));
+    const maxLng = Math.max(...pts.map((p) => p.lng));
+    const minLat = Math.min(...pts.map((p) => p.lat));
+    const maxLat = Math.max(...pts.map((p) => p.lat));
+    const pad = 20;
+    const width = 760;
+    const height = 260;
+    const spanLng = Math.max(0.0001, maxLng - minLng);
+    const spanLat = Math.max(0.0001, maxLat - minLat);
+    const project = (lng, lat) => {
+        const x = pad + ((lng - minLng) / spanLng) * (width - pad * 2);
+        const y = height - pad - ((lat - minLat) / spanLat) * (height - pad * 2);
+        return { x, y };
+    };
+    const all = pts.map((p) => ({ ...project(p.lng, p.lat), done: p.done }));
+    const polyline = all.map((p) => `${p.x},${p.y}`).join(' ');
+    const doneIdx = all.reduce((acc, p, i) => (p.done ? i : acc), -1);
+    const donePoints = doneIdx >= 1 ? all.slice(0, doneIdx + 1).map((p) => `${p.x},${p.y}`).join(' ') : '';
+    const circles = all.map((p, i) => {
+        const color = i === 0 ? '#2563eb' : (i === all.length - 1 ? '#16a34a' : (p.done ? '#1d4ed8' : '#9ca3af'));
+        return `<circle cx="${p.x}" cy="${p.y}" r="4" fill="${color}" />`;
+    }).join('');
+    return `
+        <svg viewBox="0 0 ${width} ${height}" width="100%" height="220" role="img" aria-label="物流路线图">
+            <rect x="0" y="0" width="${width}" height="${height}" fill="#f8fafc"></rect>
+            <polyline points="${polyline}" fill="none" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+            ${donePoints ? `<polyline points="${donePoints}" fill="none" stroke="#2563eb" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></polyline>` : ''}
+            ${circles}
+        </svg>
+    `;
+}
+function buildUserLogisticsMilestones(routeNodes = []) {
+    const nodes = Array.isArray(routeNodes) ? routeNodes : [];
+    if (!nodes.length) return [];
+    const picked = nodes.find((n) => String(n.status || '') === 'picked');
+    const inTransit = nodes.filter((n) => String(n.status || '') === 'in_transit');
+    const delivering = nodes.find((n) => String(n.status || '') === 'delivering');
+    const signed = nodes.find((n) => String(n.status || '') === 'signed');
+    const milestones = [];
+    if (picked) milestones.push(picked);
+    milestones.push(...inTransit);
+    if (delivering) milestones.push(delivering);
+    if (signed) milestones.push(signed);
+    return milestones.length ? milestones : nodes.slice(0, 6);
+}
+function logisticsStatusText(status) {
+    const m = {
+        picked: '包裹已揽收',
+        in_transit: '包裹运输中',
+        delivering: '包裹派送中',
+        signed: '包裹已签收'
+    };
+    return m[String(status || '').trim()] || statusZh(status);
+}
+function simplifyRegionText(location) {
+    const text = String(location || '').trim();
+    if (!text) return '物流节点';
+    const parts = text
+        .split(/[,\s·，、\-]+/)
+        .map((x) => String(x || '').trim())
+        .filter(Boolean);
+    if (!parts.length) return text;
+    const hit = parts.find((p) => /省|市|区|县|州|盟|旗|中心|站|仓/.test(p));
+    return hit || parts[0] || text;
+}
+function buildRegionPath(routeNodes = []) {
+    const nodes = Array.isArray(routeNodes) ? routeNodes : [];
+    const regions = nodes
+        .map((n) => simplifyRegionText(n.location || ''))
+        .filter(Boolean);
+    const deduped = [];
+    for (const r of regions) {
+        if (!deduped.length || deduped[deduped.length - 1] !== r) deduped.push(r);
+    }
+    return deduped.slice(0, 8);
+}
+function extractProvince(text) {
+    const s = String(text || '').replace(/\s+/g, '');
+    if (!s) return '';
+    const segRe = /(北京市|天津市|上海市|重庆市|[^省]+省|[^区]+自治区|[^区]+特别行政区|[^市]+市|[^县]+县|[^区]+区|[^旗]+旗|[^盟]+盟|[^州]+州)/g;
+    const segs = s.match(segRe) || [];
+    const dedupSegs = [];
+    for (const seg of segs) {
+        if (!dedupSegs.length || dedupSegs[dedupSegs.length - 1] !== seg) dedupSegs.push(seg);
+    }
+    const province = dedupSegs.find((x) => /省$|自治区$|特别行政区$|^(北京市|天津市|上海市|重庆市)$/.test(x)) || '';
+    if (province) return province;
+    const city = dedupSegs.find((x) => /市$/.test(x)) || '';
+    return city;
+}
+function areaOnlyText(location, fallbackAddress) {
+    const fromLocation = extractProvince(location);
+    if (fromLocation) return fromLocation;
+    return extractProvince(fallbackAddress);
+}
+function areaByMilestoneStatus(status, originArea, destArea) {
+    const s = String(status || '').trim();
+    if (s === 'picked') return originArea || '发货地';
+    if (s === 'in_transit') return originArea && destArea && originArea !== destArea ? `${originArea}→跨省干线→${destArea}` : '省内运输中';
+    if (s === 'delivering' || s === 'signed') return destArea || '收货地';
+    return destArea || originArea || '地区更新中';
+}
+function extractTransitFromRouteNodes(routeNodes = []) {
+    const list = [];
+    const re = /途经(.+)/;
+    for (const n of (Array.isArray(routeNodes) ? routeNodes : [])) {
+        const txt = String(n.location || '');
+        const m = txt.match(re);
+        if (!m) continue;
+        const parts = String(m[1] || '')
+            .split(/[、,，\s]+/)
+            .map((x) => String(x || '').trim())
+            .filter(Boolean);
+        for (const p of parts) {
+            if (!list.includes(p)) list.push(p);
+        }
+    }
+    return list;
+}
+async function call(path, options = {}) {
+    const token = localStorage.getItem('token');
+    return fetch(path, { ...options, headers: { 'Content-Type':'application/json', Authorization: `Bearer ${token}` }});
+}
+async function loadDetail() {
+    const id = getId();
+    const root = document.getElementById('root');
+    if (!id) { root.innerHTML = '<div class="card">订单ID无效</div>'; return; }
+    const [detailRes, shippingRes] = await Promise.all([call(`/api/orders/${id}`), call(`/api/orders/${id}/shipping`)]);
+    const detail = await detailRes.json();
+    const shipping = await shippingRes.json();
+    if (!detailRes.ok || !detail.success) { root.innerHTML = `<div class="card">${detail.message || '加载失败'}</div>`; return; }
+    const order = detail.order || {};
+    const tracks = shipping?.shipping?.tracks || [];
+    const routeNodes = shipping?.shipping?.route_nodes || order.shipping_route_nodes || [];
+    const userMilestones = buildUserLogisticsMilestones(routeNodes);
+    const originArea = extractProvince(tracks[0]?.location || '');
+    const destArea = extractProvince(order.shipping_address || '');
+    const transitAreas = extractTransitFromRouteNodes(routeNodes);
+    const regionPathRaw = [
+        originArea || '发货地',
+        transitAreas.length ? `途经${transitAreas.join('、')}` : (originArea && destArea && originArea !== destArea ? '跨省干线运输（途经中转省份）' : '省内运输中'),
+        destArea || '收货地'
+    ];
+    const regionPath = regionPathRaw.filter((x, i) => x && regionPathRaw.indexOf(x) === i);
+    const showRouteDebug = new URLSearchParams(location.search).get('debug_route') === '1';
+    const canCancel = ['pending','paid'].includes(String(order.status || ''));
+    const canRefund = ['paid','shipped','delivered'].includes(String(order.status || ''));
+    root.innerHTML = `
+        <div class="card">
+            <div class="text-lg font-bold">订单信息</div>
+            <div class="mt-2 text-sm text-gray-600">订单号：${escapeHtml(order.order_no || '#' + order.id)}</div>
+            <div class="text-sm text-gray-600">状态：${escapeHtml(statusZh(order.status || '-'))}</div>
+            <div class="text-sm text-gray-600">支付方式：${escapeHtml(order.payment_method || '-')}</div>
+            <div class="text-sm text-gray-600">收货地址：${escapeHtml(order.shipping_address || '-')}</div>
+            <div class="text-sm text-gray-600">发票：${escapeHtml(order.invoice_type || 'none')} / ${escapeHtml(order.invoice_title || '-')}</div>
+            <div class="mt-2 font-semibold">金额：¥${Number(order.total_amount || 0).toFixed(2)}</div>
+            <div class="mt-3 flex gap-2">
+                ${canCancel ? '<button id="btnCancel" class="px-3 py-1 rounded bg-gray-800 text-white">取消订单</button>' : ''}
+                ${canRefund ? '<button id="btnRefund" class="px-3 py-1 rounded bg-blue-600 text-white">申请退款</button>' : ''}
+            </div>
+        </div>
+        <div class="card">
+            <div class="text-lg font-bold">商品明细</div>
+            <div class="mt-2">${(order.items || []).map(it => `
+                <div class="py-2 border-b border-gray-100 text-sm">
+                    ${escapeHtml(it.title)} · ${escapeHtml(it.author)} × ${Number(it.quantity || 0)} · ¥${Number(it.price || 0).toFixed(2)}
+                </div>
+            `).join('')}</div>
+        </div>
+        <div class="card">
+            <div class="text-lg font-bold">物流追踪</div>
+            <div class="mt-2 text-sm text-gray-600">当前状态：${escapeHtml(statusZh(shipping?.shipping?.shipping_status || order.shipping_status || '-'))}</div>
+            <div class="text-sm text-gray-600">预计送达：${escapeHtml(shipping?.shipping?.eta_at || '-')}</div>
+            ${(shipping?.shipping?.shipping_is_delayed ? `<div class="text-sm text-red-600">已延迟 ${Number(shipping?.shipping?.shipping_delay_minutes || 0)} 分钟</div>` : '')}
+            ${(shipping?.shipping?.shipping_exception_text ? `<div class="text-sm text-red-600">${escapeHtml(shipping.shipping.shipping_exception_text)}</div>` : '')}
+            <div class="route-map-wrap">
+                <div class="text-sm font-semibold text-gray-700">路线轨迹图</div>
+                <div id="routeMapPanel" class="mt-2 text-sm text-gray-500">正在加载路线...</div>
+                <div class="route-map-legend">
+                    <span><i class="route-dot" style="background:#2563eb"></i>已完成路段</span>
+                    <span><i class="route-dot" style="background:#9ca3af"></i>待推进路段</span>
+                    <span><i class="route-dot" style="background:#16a34a"></i>终点</span>
+                </div>
+                ${regionPath.length ? `
+                    <div class="mt-2 text-xs text-gray-600">经过地区：${regionPath.map(escapeHtml).join(' → ')}</div>
+                ` : ''}
+            </div>
+            <div class="mt-4">
+                ${userMilestones.length ? userMilestones.map(n => `
+                    <div class="timeline-item">
+                        <div class="text-sm font-semibold">${escapeHtml(logisticsStatusText(n.status))}</div>
+                        <div class="text-xs text-gray-500">${escapeHtml(String(n.status) === 'in_transit' ? (String(n.location || '').trim() || areaByMilestoneStatus(n.status, originArea, destArea)) : areaByMilestoneStatus(n.status, originArea, destArea))}</div>
+                    </div>
+                `).join('') : '<div class="text-sm text-gray-500">暂无物流节点</div>'}
+            </div>
+            ${routeNodes.length ? `
+                <div class="mt-5 pt-4 border-t border-gray-100">
+                    <div class="text-sm font-semibold text-gray-700">规划路线节点（高德）</div>
+                    <div class="mt-2 space-y-2">
+                        ${userMilestones.map(n => `
+                            <div class="text-sm ${Number(n.is_done || 0) ? 'text-green-700' : 'text-gray-700'}">
+                                ${Number(n.is_done || 0) ? '已完成' : '待推进'} · ${escapeHtml(logisticsStatusText(n.status))}
+                                <span class="text-gray-500">（${escapeHtml(String(n.status) === 'in_transit' ? (String(n.location || '').trim() || areaByMilestoneStatus(n.status, originArea, destArea)) : areaByMilestoneStatus(n.status, originArea, destArea))}）</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${showRouteDebug && routeNodes.length > userMilestones.length ? `
+                    <details class="mt-3">
+                        <summary class="text-xs text-gray-500 cursor-pointer">查看完整物流明细（调试用）</summary>
+                        <div class="mt-2 space-y-1">
+                            ${routeNodes.map(n => `
+                                <div class="text-xs ${Number(n.is_done || 0) ? 'text-green-700' : 'text-gray-500'}">
+                                    ${Number(n.is_done || 0) ? '已完成' : '待推进'} · ${escapeHtml(statusZh(n.status))} · ${escapeHtml(n.content || '-')} · ${escapeHtml(n.location || '-')}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </details>
+                    ` : ''}
+                    </div>
+                </div>
+            ` : ''}
+        </div>
+    `;
+    const routeMapPanel = document.getElementById('routeMapPanel');
+    if (routeMapPanel) {
+        const svg = buildRouteSvg(routeNodes);
+        routeMapPanel.innerHTML = svg || '<div class="text-xs text-gray-500">当前路线节点经纬度不足，暂无法绘制轨迹图</div>';
+    }
+    const btnCancel = document.getElementById('btnCancel');
+    if (btnCancel) {
+        btnCancel.onclick = async () => {
+            const reason = prompt('请输入取消原因（可选）', '计划有变') || '';
+            const r = await call(`/api/orders/${id}/cancel`, { method: 'POST', body: JSON.stringify({ reason_code: 'user_cancel', reason_text: reason })});
+            const d = await r.json();
+            alert(d.message || (d.success ? '操作成功' : '操作失败'));
+            if (d.success) loadDetail();
+        };
+    }
+    const btnRefund = document.getElementById('btnRefund');
+    if (btnRefund) {
+        btnRefund.onclick = async () => {
+            const reason = prompt('请输入退款原因', '不想要了') || '';
+            const r = await call(`/api/orders/${id}/refund`, { method: 'POST', body: JSON.stringify({ refund_type: 'only_refund', reason_code: 'user_request', reason_text: reason })});
+            const d = await r.json();
+            alert(d.message || (d.success ? '操作成功' : '操作失败'));
+            if (d.success) loadDetail();
+        };
+    }
+}
+loadDetail().catch((e) => {
+    document.getElementById('root').innerHTML = `<div class="card">加载失败：${e.message}</div>`;
+});
+</script>
+</body>
+</html>

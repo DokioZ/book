@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>购物车 - 图书智能宣传系统</title>
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+            overflow-x: hidden;
+        }
+        
+        /* 主容器 */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* 顶部导航栏 */
+        header {
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a73e8;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo-icon {
+            font-size: 32px;
+            margin-right: 10px;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav-link {
+            text-decoration: none;
+            color: #333;
+            font-size: 16px;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-link:hover,
+        .nav-link.active {
+            color: #1a73e8;
+        }
+        
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .search-btn, .cart-btn, .user-btn, .login-btn, .register-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #333;
+            cursor: pointer;
+            transition: color 0.3s;
+            padding: 8px;
+            border-radius: 50%;
+        }
+        
+        .search-btn:hover, .cart-btn:hover, .user-btn:hover {
+            background-color: #f0f0f0;
+            color: #1a73e8;
+        }
+        
+        .login-btn, .register-btn {
+            font-size: 14px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        
+        .login-btn {
+            color: #1a73e8;
+            background-color: transparent;
+        }
+        
+        .register-btn {
+            color: #fff;
+            background-color: #1a73e8;
+        }
+        
+        /* 购物车内容 */
+        .cart-container {
+            margin: 30px 0;
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .cart-header {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        
+        .cart-empty {
+            text-align: center;
+            padding: 60px 0;
+            color: #999;
+        }
+        
+        .cart-empty i {
+            font-size: 60px;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+        
+        .cart-empty p {
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+        
+        .continue-shopping {
+            background-color: #1a73e8;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .continue-shopping:hover {
+            background-color: #1557b0;
+        }
+        
+        .cart-items {
+            margin-bottom: 30px;
+        }
+        
+        .cart-item {
+            display: grid;
+            grid-template-columns: 120px 1fr auto auto auto;
+            gap: 20px;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+        
+        .cart-item-cover {
+            width: 120px;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        
+        .cart-item-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .cart-item-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .cart-item-author {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .cart-item-remove {
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 14px;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .cart-item-remove:hover {
+            color: #e74c3c;
+        }
+        
+        .cart-item-price {
+            font-size: 18px;
+            font-weight: 600;
+            color: #e74c3c;
+        }
+        
+        .cart-item-quantity {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .quantity-btn {
+            width: 30px;
+            height: 30px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .quantity-btn:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .quantity-input {
+            width: 40px;
+            text-align: center;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+        }
+        
+        .cart-item-subtotal {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .cart-total {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 20px;
+            padding: 20px 0;
+            border-top: 2px solid #f0f0f0;
+        }
+        
+        .total-label {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .total-amount {
+            font-size: 24px;
+            font-weight: 600;
+            color: #e74c3c;
+        }
+        
+        .checkout-btn {
+            background-color: #1a73e8;
+            color: #fff;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .checkout-btn:hover {
+            background-color: #1557b0;
+        }
+        
+        .checkout-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* 页脚 */
+        footer {
+            background-color: #333;
+            color: #fff;
+            padding: 40px 0;
+            margin-top: 60px;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+        
+        .footer-column h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .footer-column ul {
+            list-style: none;
+        }
+        
+        .footer-column li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-column a {
+            color: #ccc;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-column a:hover {
+            color: #fff;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            margin-top: 30px;
+            border-top: 1px solid #555;
+            color: #999;
+            font-size: 14px;
+        }
+        
+        /* 底部导航栏 - 移动端 */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #fff;
+            border-top: 1px solid #f0f0f0;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 900;
+        }
+        
+        .mobile-nav-items {
+            display: flex;
+            justify-content: space-around;
+        }
+        
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #666;
+            text-decoration: none;
+        }
+        
+        .mobile-nav-item.active {
+            color: #1a73e8;
+        }
+        
+        .mobile-nav-icon {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        
+        .mobile-nav-text {
+            font-size: 12px;
+        }
+        
+        /* 支付方式弹窗样式 */
+        .payment-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 16px;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+        
+        .payment-modal.active {
+            display: flex;
+        }
+        
+        .payment-modal-content {
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 22px;
+            width: 100%;
+            max-width: 500px;
+            max-height: calc(100vh - 32px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .payment-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .payment-modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin: 0;
+        }
+        
+        .payment-modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        
+        .payment-modal-close:hover {
+            color: #333;
+        }
+        
+        .payment-methods {
+            margin-bottom: 16px;
+        }
+
+        .payment-modal-body {
+            overflow-y: auto;
+            padding-right: 4px;
+            margin-right: -2px;
+        }
+        
+        .payment-method {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .payment-method:hover {
+            border-color: #1a73e8;
+            background-color: #f8f9fa;
+        }
+        
+        .payment-method.selected {
+            border-color: #1a73e8;
+            background-color: #e8f0fe;
+        }
+        
+        .payment-radio {
+            margin-right: 15px;
+            accent-color: #1a73e8;
+        }
+        
+        .payment-info {
+            flex: 1;
+        }
+        
+        .payment-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .payment-desc {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .payment-icons {
+            display: flex;
+            gap: 10px;
+            font-size: 20px;
+        }
+        
+        .payment-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            padding-top: 14px;
+            margin-top: 12px;
+            border-top: 1px solid #f0f0f0;
+            flex-shrink: 0;
+        }
+        .payment-status-msg {
+            margin-top: 10px;
+            min-height: 20px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .payment-status-msg.error { color: #dc2626; }
+        .payment-status-msg.success { color: #16a34a; }
+        .payment-status-msg.info { color: #2563eb; }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .btn-primary {
+            background-color: #1a73e8;
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1557b0;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-nav {
+                display: block;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .cart-item {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .cart-item-cover {
+                margin: 0 auto;
+            }
+            
+            .cart-item-info {
+                align-items: center;
+            }
+            
+            .cart-item-quantity {
+                justify-content: center;
+            }
+            
+            .cart-total {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .payment-modal-content {
+                margin: 0;
+                padding: 16px;
+                max-height: calc(100vh - 20px);
+            }
+
+            .payment-modal {
+                padding: 10px;
+                align-items: flex-start;
+            }
+
+            .payment-actions {
+                gap: 10px;
+            }
+
+            .payment-actions .btn {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header>
+        <div class="container header-content">
+            <a href="index.html" class="logo">
+                <i class="iconfont icon-book logo-icon"></i>
+                <span>图书智能宣传系统</span>
+            </a>
+            
+                <nav class="nav-links">
+                <a href="bookstore.html" class="nav-link">图书商店</a>
+                <a href="create-video.html" class="nav-link">生成视频</a>
+                <a href="book-square.html" class="nav-link">图书广场</a>
+                <a href="user-center.html" class="nav-link">个人中心</a>
+                <a href="orders.html" class="nav-link">我的订单</a>
+            </nav>
+            
+            <div class="user-actions">
+                <button class="search-btn" id="searchBtn"><i class="iconfont icon-search"></i></button>
+                <button class="cart-btn"><i class="iconfont icon-shopping-cart"></i></button>
+                <button class="user-btn"><i class="iconfont icon-user"></i></button>
+                <button class="login-btn">登录</button>
+                <button class="register-btn">注册</button>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <!-- 购物车内容 -->
+        <div class="cart-container">
+            <h2 class="cart-header">我的购物车</h2>
+            
+            <div class="cart-items" id="cartItems">
+                <!-- 购物车商品将通过JavaScript动态生成 -->
+            </div>
+            
+            <div class="cart-total" id="cartTotal">
+                <!-- 购物车总计将通过JavaScript动态生成 -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- 支付方式弹窗 -->
+    <div class="payment-modal" id="paymentModal">
+        <div class="payment-modal-content">
+            <div class="payment-modal-header">
+                <h3 class="payment-modal-title">选择支付方式</h3>
+                <button class="payment-modal-close" id="closePaymentModal">&times;</button>
+            </div>
+            <div class="payment-modal-body">
+            <div class="payment-methods">
+                <div class="payment-method">
+                    <input type="radio" id="alipay" name="payment" class="payment-radio" value="alipay" checked>
+                    <div class="payment-info">
+                        <div class="payment-name">支付宝</div>
+                        <div class="payment-desc">支付宝安全支付</div>
+                    </div>
+                    <div class="payment-icons">
+                        <i class="fab fa-alipay"></i>
+                    </div>
+                </div>
+                <div class="payment-method">
+                    <input type="radio" id="wechat" name="payment" class="payment-radio" value="wechat">
+                    <div class="payment-info">
+                        <div class="payment-name">微信支付</div>
+                        <div class="payment-desc">微信安全支付</div>
+                    </div>
+                    <div class="payment-icons">
+                        <i class="fab fa-weixin"></i>
+                    </div>
+                </div>
+                <div class="payment-method">
+                    <input type="radio" id="credit-card" name="payment" class="payment-radio" value="credit-card">
+                    <div class="payment-info">
+                        <div class="payment-name">信用卡</div>
+                        <div class="payment-desc">支持Visa、MasterCard、银联等</div>
+                    </div>
+                    <div class="payment-icons">
+                        <i class="fab fa-cc-visa"></i>
+                        <i class="fab fa-cc-mastercard"></i>
+                        <i class="fab fa-cc-unionpay"></i>
+                    </div>
+                </div>
+                <div class="payment-method">
+                    <input type="radio" id="paypal" name="payment" class="payment-radio" value="paypal">
+                    <div class="payment-info">
+                        <div class="payment-name">PayPal</div>
+                        <div class="payment-desc">PayPal国际支付</div>
+                    </div>
+                    <div class="payment-icons">
+                        <i class="fab fa-paypal"></i>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 14px; border-top: 1px solid #f0f0f0; padding-top: 12px;">
+                <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #333;">收货信息</div>
+                <div style="display:flex;gap:8px;margin-bottom:8px;">
+                    <button type="button" id="addrModeHistoryBtn" class="btn btn-secondary" style="padding:6px 10px;">使用历史地址</button>
+                    <button type="button" id="addrModeNewBtn" class="btn btn-secondary" style="padding:6px 10px;">新建地址</button>
+                </div>
+                <div id="historyAddressWrap" style="display:none;border:1px solid #e5e7eb;border-radius:8px;padding:10px;background:#fafafa;margin-bottom:8px;">
+                    <div id="historyAddressList" style="display:flex;flex-direction:column;gap:8px;max-height:180px;overflow:auto;"></div>
+                    <div style="font-size:12px;color:#666;margin-top:6px;">可直接选择历史地址，或切换到“新建地址”。</div>
+                </div>
+                <div id="newAddressWrap">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                    <input id="receiverName" type="text" placeholder="收货人姓名" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
+                    <input id="receiverPhone" type="text" placeholder="手机号" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
+                    <select id="receiverProvince" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
+                        <option value="">选择省份</option>
+                    </select>
+                    <select id="receiverCity" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;" disabled>
+                        <option value="">选择城市</option>
+                    </select>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px;">
+                    <select id="receiverDistrict" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;" disabled>
+                        <option value="">选择区县</option>
+                    </select>
+                    <select id="receiverTown" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;" disabled>
+                        <option value="">选择镇街（可选）</option>
+                    </select>
+                </div>
+                <textarea id="receiverAddress" placeholder="详细收货地址" style="margin-top:8px;padding:10px;border:1px solid #e5e7eb;border-radius:8px;width:100%;min-height:70px;resize:vertical;"></textarea>
+                <label style="display:flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:#555;">
+                    <input id="saveAddressBook" type="checkbox" checked>
+                    保存到历史地址
+                </label>
+                </div>
+            </div>
+            <div style="margin-top: 12px; border-top: 1px solid #f0f0f0; padding-top: 12px;">
+                <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #333;">发票信息（选填）</div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                    <select id="invoiceType" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
+                        <option value="none">不开发票</option>
+                        <option value="personal">个人抬头</option>
+                        <option value="company">企业抬头</option>
+                    </select>
+                    <input id="invoiceEmail" type="text" placeholder="发票邮箱" style="padding:10px;border:1px solid #e5e7eb;border-radius:8px;">
+                </div>
+                <input id="invoiceTitle" type="text" placeholder="发票抬头" style="margin-top:8px;padding:10px;border:1px solid #e5e7eb;border-radius:8px;width:100%;">
+                <input id="invoiceTaxNo" type="text" placeholder="企业税号（企业发票时填写）" style="margin-top:8px;padding:10px;border:1px solid #e5e7eb;border-radius:8px;width:100%;">
+            </div>
+            </div>
+            <div class="payment-actions">
+                <button class="btn btn-secondary" id="cancelPayment">取消</button>
+                <button class="btn btn-primary" id="confirmPayment">确认支付</button>
+            </div>
+            <div id="paymentStatusMsg" class="payment-status-msg"></div>
+        </div>
+    </div>
+    
+    <!-- 页脚 -->
+    <footer>
+        <div class="container footer-content">
+            <div class="footer-column">
+                <h3>关于我们</h3>
+                <ul>
+                    <li><a href="#">公司介绍</a></li>
+                    <li><a href="#">联系方式</a></li>
+                    <li><a href="#">招聘信息</a></li>
+                    <li><a href="#">合作伙伴</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>帮助中心</h3>
+                <ul>
+                    <li><a href="#">常见问题</a></li>
+                    <li><a href="#">使用指南</a></li>
+                    <li><a href="#">意见反馈</a></li>
+                    <li><a href="#">用户协议</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>关注我们</h3>
+                <ul>
+                    <li><a href="#">微信公众号</a></li>
+                    <li><a href="#">微博</a></li>
+                    <li><a href="#">抖音</a></li>
+                    <li><a href="#">小红书</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>&copy; 2023 图书智能宣传系统 版权所有</p>
+        </div>
+    </footer>
+    
+    <!-- 底部导航栏 - 移动端 -->
+    <nav class="mobile-nav">
+        <div class="mobile-nav-items">
+            <a href="bookstore.html" class="mobile-nav-item">
+                <i class="iconfont icon-bookstore mobile-nav-icon"></i>
+                <span class="mobile-nav-text">图书商店</span>
+            </a>
+            <a href="create-video.html" class="mobile-nav-item">
+                <i class="iconfont icon-video-camera mobile-nav-icon"></i>
+                <span class="mobile-nav-text">生成视频</span>
+            </a>
+            <a href="book-square.html" class="mobile-nav-item">
+                <i class="iconfont icon-square mobile-nav-icon"></i>
+                <span class="mobile-nav-text">图书广场</span>
+            </a>
+            <a href="user-center.html" class="mobile-nav-item">
+                <i class="iconfont icon-user mobile-nav-icon"></i>
+                <span class="mobile-nav-text">个人中心</span>
+            </a>
+        </div>
+    </nav>
+    
+    <!-- JavaScript -->
+    <script>
+        // 显示提示信息
+        function showToast(message, type = 'info') {
+            // 创建提示元素
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 ease-in-out translate-y-[-20px] opacity-0`;
+            // 支付弹窗层级较高，强制把toast放到最上层，避免“点击无反应”错觉
+            toast.style.zIndex = '20000';
+            
+            // 设置不同类型的样式
+            if (type === 'success') {
+                toast.classList.add('bg-green-500', 'text-white');
+                toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
+            } else if (type === 'error') {
+                toast.classList.add('bg-red-500', 'text-white');
+                toast.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i>${message}`;
+            } else {
+                toast.classList.add('bg-blue-500', 'text-white');
+                toast.innerHTML = `<i class="fas fa-info-circle mr-2"></i>${message}`;
+            }
+            
+            // 添加到页面
+            document.body.appendChild(toast);
+            
+            // 显示动画
+            setTimeout(() => {
+                toast.classList.remove('translate-y-[-20px]', 'opacity-0');
+            }, 10);
+            
+            // 自动关闭
+            setTimeout(() => {
+                toast.classList.add('translate-y-[-20px]', 'opacity-0');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        function setPaymentStatus(message = '', type = 'info') {
+            const el = document.getElementById('paymentStatusMsg');
+            if (!el) return;
+            el.className = `payment-status-msg ${type}`;
+            el.textContent = String(message || '');
+        }
+
+        function buildCartFallbackCover(title = '图书', author = '') {
+            const t = String(title || '图书').slice(0, 8);
+            const a = String(author || '未知作者').slice(0, 8);
+            const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="120" viewBox="0 0 100 120">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+  <rect width="100" height="120" rx="10" fill="url(#g)"/>
+  <rect x="8" y="8" width="84" height="104" rx="8" fill="rgba(255,255,255,0.10)"/>
+  <text x="12" y="58" fill="#fff" font-size="14" font-weight="700" font-family="Arial, sans-serif">${t}</text>
+  <text x="12" y="78" fill="#E5E7EB" font-size="10" font-family="Arial, sans-serif">${a}</text>
+</svg>`;
+            return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+        }
+
+        function getCartItemCover(item) {
+            const cover = String(item?.cover_url || item?.cover || item?.image || '').trim();
+            if (cover) return cover;
+            return buildCartFallbackCover(item?.title || '图书', item?.author || '');
+        }
+
+        function onCartCoverError(img) {
+            if (!img) return;
+            img.onerror = null;
+            const title = img.getAttribute('alt') || '图书';
+            const author = img.dataset.author || '';
+            img.src = buildCartFallbackCover(title, author);
+        }
+        
+        const addressState = {
+            mode: 'history',
+            list: [],
+            selectedId: 0
+        };
+        
+        function getAuthToken() {
+            return localStorage.getItem('token') || '';
+        }
+        
+        async function fetchDistricts(keywords = '中国') {
+            const token = getAuthToken();
+            const resp = await fetch(`/api/geo/districts?keywords=${encodeURIComponent(keywords)}&subdistrict=1`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok || !data.success) throw new Error(data.message || '获取行政区失败');
+            return data.items || [];
+        }
+        
+        function fillSelectOptions(selectEl, items = [], placeholder = '请选择') {
+            if (!selectEl) return;
+            selectEl.innerHTML = `<option value="">${placeholder}</option>`;
+            items.forEach((it) => {
+                const opt = document.createElement('option');
+                opt.value = String(it.adcode || '');
+                opt.textContent = String(it.name || '');
+                opt.dataset.level = String(it.level || '');
+                selectEl.appendChild(opt);
+            });
+            selectEl.disabled = items.length === 0;
+        }
+        
+        async function initAddressCascader() {
+            const provinceEl = document.getElementById('receiverProvince');
+            const cityEl = document.getElementById('receiverCity');
+            const districtEl = document.getElementById('receiverDistrict');
+            const townEl = document.getElementById('receiverTown');
+            if (!provinceEl || !cityEl || !districtEl || !townEl) return;
+            try {
+                const provinces = await fetchDistricts('中国');
+                fillSelectOptions(provinceEl, provinces, '选择省份');
+            } catch (error) {
+                console.error(error);
+                showToast('行政区加载失败，请稍后重试', 'error');
+            }
+            
+            provinceEl.addEventListener('change', async () => {
+                const code = provinceEl.value;
+                fillSelectOptions(cityEl, [], '选择城市');
+                fillSelectOptions(districtEl, [], '选择区县');
+                fillSelectOptions(townEl, [], '选择镇街（可选）');
+                if (!code) return;
+                try {
+                    const cities = await fetchDistricts(code);
+                    fillSelectOptions(cityEl, cities, '选择城市');
+                } catch (error) {
+                    console.error(error);
+                }
+            });
+            
+            cityEl.addEventListener('change', async () => {
+                const code = cityEl.value;
+                fillSelectOptions(districtEl, [], '选择区县');
+                fillSelectOptions(townEl, [], '选择镇街（可选）');
+                if (!code) return;
+                try {
+                    const districts = await fetchDistricts(code);
+                    fillSelectOptions(districtEl, districts, '选择区县');
+                } catch (error) {
+                    console.error(error);
+                }
+            });
+            
+            districtEl.addEventListener('change', async () => {
+                const code = districtEl.value;
+                fillSelectOptions(townEl, [], '选择镇街（可选）');
+                if (!code) return;
+                try {
+                    const towns = await fetchDistricts(code);
+                    fillSelectOptions(townEl, towns, '选择镇街（可选）');
+                } catch (error) {
+                    console.error(error);
+                }
+            });
+        }
+        
+        function getSelectedText(selectId) {
+            const el = document.getElementById(selectId);
+            if (!el) return '';
+            const opt = el.options?.[el.selectedIndex];
+            return opt ? String(opt.textContent || '').trim() : '';
+        }
+        
+        function applyAddressToForm(addr) {
+            if (!addr) return;
+            const setValue = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.value = value || '';
+            };
+            setValue('receiverName', addr.consignee_name || '');
+            setValue('receiverPhone', addr.phone || '');
+            setValue('receiverAddress', addr.detail_address || '');
+        }
+        
+        function renderHistoryAddresses() {
+            const listEl = document.getElementById('historyAddressList');
+            if (!listEl) return;
+            if (!addressState.list.length) {
+                listEl.innerHTML = '<div style="font-size:13px;color:#666;">暂无历史地址，请切换到“新建地址”。</div>';
+                return;
+            }
+            listEl.innerHTML = addressState.list.map((addr) => {
+                const checked = Number(addr.id) === Number(addressState.selectedId) ? 'checked' : '';
+                return `<label style="display:flex;align-items:flex-start;gap:8px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;cursor:pointer;">
+                    <input type="radio" name="historyAddr" value="${addr.id}" ${checked} style="margin-top:3px;">
+                    <div style="font-size:13px;color:#333;line-height:1.4;">
+                        <div><strong>${addr.consignee_name || ''}</strong> ${addr.phone || ''} ${Number(addr.is_default) === 1 ? '<span style="color:#1a73e8;">[默认]</span>' : ''}</div>
+                        <div>${addr.full_address || ''}</div>
+                    </div>
+                </label>`;
+            }).join('');
+            listEl.querySelectorAll('input[name="historyAddr"]').forEach((radio) => {
+                radio.addEventListener('change', () => {
+                    addressState.selectedId = Number(radio.value || 0);
+                    const hit = addressState.list.find((x) => Number(x.id) === Number(addressState.selectedId));
+                    applyAddressToForm(hit);
+                });
+            });
+        }
+        
+        async function loadHistoryAddresses() {
+            const token = getAuthToken();
+            if (!token) return;
+            const resp = await fetch('/api/addresses', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            const data = await resp.json().catch(() => ({}));
+            if (!resp.ok || !data.success) return;
+            addressState.list = Array.isArray(data.addresses) ? data.addresses : [];
+            const defaultAddr = addressState.list.find((x) => Number(x.is_default) === 1) || addressState.list[0];
+            addressState.selectedId = defaultAddr ? Number(defaultAddr.id) : 0;
+            renderHistoryAddresses();
+            if (defaultAddr) applyAddressToForm(defaultAddr);
+        }
+        
+        function setAddressMode(mode) {
+            addressState.mode = mode === 'new' ? 'new' : 'history';
+            const historyWrap = document.getElementById('historyAddressWrap');
+            const newWrap = document.getElementById('newAddressWrap');
+            const saveCb = document.getElementById('saveAddressBook');
+            const historyBtn = document.getElementById('addrModeHistoryBtn');
+            const newBtn = document.getElementById('addrModeNewBtn');
+            if (historyWrap) historyWrap.style.display = addressState.mode === 'history' ? 'block' : 'none';
+            if (newWrap) newWrap.style.display = addressState.mode === 'new' ? 'block' : 'none';
+            if (saveCb) saveCb.disabled = addressState.mode === 'history';
+            if (historyBtn) historyBtn.style.backgroundColor = addressState.mode === 'history' ? '#e8f1fe' : '';
+            if (newBtn) newBtn.style.backgroundColor = addressState.mode === 'new' ? '#e8f1fe' : '';
+        }
+        
+        // 渲染购物车
+        function renderCart() {
+            const cartItemsContainer = document.getElementById('cartItems');
+            const cartTotalContainer = document.getElementById('cartTotal');
+            
+            // 从本地存储获取购物车数据
+            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            
+            // 清空现有内容
+            cartItemsContainer.innerHTML = '';
+            cartTotalContainer.innerHTML = '';
+            
+            if (cart.length === 0) {
+                // 购物车为空
+                cartItemsContainer.innerHTML = `
+                    <div class="cart-empty">
+                        <i class="iconfont icon-shopping-cart"></i>
+                        <p>购物车是空的</p>
+                        <a href="bookstore.html"><button class="continue-shopping">继续购物</button></a>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 计算总金额
+            let totalAmount = 0;
+            
+            // 渲染购物车商品
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                totalAmount += itemTotal;
+                
+                const cartItem = document.createElement('div');
+                cartItem.className = 'cart-item';
+                cartItem.innerHTML = `
+                    <img src="${getCartItemCover(item)}" alt="${item.title}" class="cart-item-cover"
+                         referrerpolicy="no-referrer" data-author="${item.author || ''}" onerror="onCartCoverError(this)">
+                    <div class="cart-item-info">
+                        <h3 class="cart-item-title">${item.title}</h3>
+                        <p class="cart-item-author">${item.author}</p>
+                        <button class="cart-item-remove" onclick="removeFromCart(${index})">删除</button>
+                    </div>
+                    <div class="cart-item-price">¥${item.price.toFixed(2)}</div>
+                    <div class="cart-item-quantity">
+                        <button class="quantity-btn" onclick="decreaseQuantity(${index})">-</button>
+                        <input type="number" class="quantity-input" value="${item.quantity}" min="1" onchange="updateQuantity(${index}, this.value)">
+                        <button class="quantity-btn" onclick="increaseQuantity(${index})">+</button>
+                    </div>
+                    <div class="cart-item-subtotal">¥${itemTotal.toFixed(2)}</div>
+                `;
+                cartItemsContainer.appendChild(cartItem);
+            });
+            
+            // 渲染购物车总计
+            cartTotalContainer.innerHTML = `
+                <div class="total-label">总计：</div>
+                <div class="total-amount">¥${totalAmount.toFixed(2)}</div>
+                <div style="display: flex; gap: 10px;">
+                    <a href="bookstore.html"><button class="btn btn-secondary">继续购物</button></a>
+                    <button class="checkout-btn" onclick="checkout()">去结算</button>
+                </div>
+            `;
+        }
+        
+        // 从购物车移除商品
+        function removeFromCart(index) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart.splice(index, 1);
+            localStorage.setItem('cart', JSON.stringify(cart));
+            renderCart();
+            showToast('商品已从购物车移除', 'success');
+        }
+        
+        // 减少商品数量
+        function decreaseQuantity(index) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (cart[index].quantity > 1) {
+                cart[index].quantity -= 1;
+                localStorage.setItem('cart', JSON.stringify(cart));
+                renderCart();
+            }
+        }
+        
+        // 增加商品数量
+        function increaseQuantity(index) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            cart[index].quantity += 1;
+            localStorage.setItem('cart', JSON.stringify(cart));
+            renderCart();
+        }
+        
+        // 更新商品数量
+        function updateQuantity(index, value) {
+            let cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const quantity = parseInt(value);
+            if (quantity >= 1) {
+                cart[index].quantity = quantity;
+                localStorage.setItem('cart', JSON.stringify(cart));
+                renderCart();
+            }
+        }
+
+        // 下单前同步本地购物车到后端，避免“前端有商品/后端为空”
+        async function syncLocalCartToServer(token) {
+            const localCart = JSON.parse(localStorage.getItem('cart')) || [];
+            if (!Array.isArray(localCart) || !localCart.length) return;
+            const titleToIdCache = new Map();
+
+            async function resolveBookId(item) {
+                const directId = Number(item.book_id || item.id || 0);
+                if (directId) return directId;
+                const title = String(item.title || '').trim();
+                if (!title) return 0;
+                if (titleToIdCache.has(title)) return titleToIdCache.get(title);
+                const resp = await fetch(`/api/books?search=${encodeURIComponent(title)}&page=1&limit=20`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok || !data.success || !Array.isArray(data.books)) {
+                    titleToIdCache.set(title, 0);
+                    return 0;
+                }
+                const exact = data.books.find((b) => String(b.title || '').trim() === title);
+                const hit = exact || data.books[0];
+                const foundId = Number(hit?.id || 0);
+                titleToIdCache.set(title, foundId);
+                return foundId;
+            }
+
+            let syncedCount = 0;
+            for (const item of localCart) {
+                const bookId = await resolveBookId(item);
+                const qty = Math.max(1, Number(item.quantity || 1));
+                if (!bookId) continue;
+                const resp = await fetch('/api/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ book_id: bookId, quantity: qty })
+                });
+                const data = await resp.json().catch(() => ({}));
+                if (!resp.ok || !data.success) {
+                    throw new Error(data.message || `同步购物车失败（book_id=${bookId}）`);
+                }
+                syncedCount += 1;
+            }
+            if (syncedCount === 0) {
+                throw new Error('购物车商品缺少有效图书ID，无法提交订单');
+            }
+        }
+        
+        // 结算
+        function checkout() {
+            // 显示支付方式弹窗
+            const paymentModal = document.getElementById('paymentModal');
+            if (paymentModal) {
+                paymentModal.classList.add('active');
+                loadHistoryAddresses();
+                // 绑定弹窗事件
+                bindPaymentModalEvents();
+            }
+        }
+        
+        // 绑定支付弹窗事件
+        function bindPaymentModalEvents() {
+            const paymentModal = document.getElementById('paymentModal');
+            const closeBtn = document.getElementById('closePaymentModal');
+            const cancelBtn = document.getElementById('cancelPayment');
+            const confirmBtn = document.getElementById('confirmPayment');
+            const paymentMethods = document.querySelectorAll('.payment-method');
+            
+            // 关闭弹窗
+            function closePaymentModal() {
+                paymentModal.classList.remove('active');
+                setPaymentStatus('', 'info');
+            }
+            
+            // 点击关闭按钮
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closePaymentModal);
+            }
+            
+            // 点击取消按钮
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', closePaymentModal);
+            }
+            
+            // 点击确认支付按钮
+            if (confirmBtn) {
+                confirmBtn.addEventListener('click', async function() {
+                    setPaymentStatus('', 'info');
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                        setPaymentStatus('未登录：请先登录后再结算。', 'error');
+                        showToast('请先登录后再结算', 'error');
+                        alert('请先登录后再结算');
+                        return;
+                    }
+                    const selectedPayment = document.querySelector('input[name="payment"]:checked');
+                    if (!selectedPayment) {
+                        setPaymentStatus('请选择支付方式。', 'error');
+                        showToast('请选择支付方式', 'error');
+                        return;
+                    }
+                    const receiverName = (document.getElementById('receiverName')?.value || '').trim();
+                    const receiverPhone = (document.getElementById('receiverPhone')?.value || '').trim();
+                    const receiverProvince = getSelectedText('receiverProvince');
+                    const receiverCity = getSelectedText('receiverCity');
+                    const receiverDistrict = getSelectedText('receiverDistrict');
+                    const receiverTown = getSelectedText('receiverTown');
+                    const receiverAddress = (document.getElementById('receiverAddress')?.value || '').trim();
+                    const usingHistory = addressState.mode === 'history' && Number(addressState.selectedId) > 0;
+                    if (!usingHistory && (!receiverName || !receiverPhone || !receiverProvince || !receiverCity || !receiverDistrict || !receiverAddress)) {
+                        setPaymentStatus('请填写完整收货信息（姓名、手机号、省市区与详细地址）。', 'error');
+                        showToast('请填写完整收货信息（姓名、手机号、省市区与详细地址）', 'error');
+                        return;
+                    }
+                    const invoiceType = document.getElementById('invoiceType')?.value || 'none';
+                    const invoiceTitle = (document.getElementById('invoiceTitle')?.value || '').trim();
+                    const invoiceTaxNo = (document.getElementById('invoiceTaxNo')?.value || '').trim();
+                    const invoiceEmail = (document.getElementById('invoiceEmail')?.value || '').trim();
+                    if (invoiceType === 'company' && !invoiceTitle) {
+                        setPaymentStatus('企业发票请填写发票抬头。', 'error');
+                        showToast('企业发票请填写发票抬头', 'error');
+                        return;
+                    }
+                    const originalText = confirmBtn.textContent || '确认支付';
+                    try {
+                        confirmBtn.disabled = true;
+                        confirmBtn.textContent = '支付中...';
+                        setPaymentStatus('正在提交订单，请稍候...', 'info');
+                        await syncLocalCartToServer(token);
+                        let finalAddressId = usingHistory ? Number(addressState.selectedId) : 0;
+                        if (!usingHistory && document.getElementById('saveAddressBook')?.checked) {
+                            const createAddressResp = await fetch('/api/addresses', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({
+                                    consignee_name: receiverName,
+                                    phone: receiverPhone,
+                                    province_name: receiverProvince,
+                                    city_name: receiverCity,
+                                    district_name: receiverDistrict,
+                                    town_name: receiverTown,
+                                    detail_address: receiverAddress,
+                                    is_default: addressState.list.length === 0
+                                })
+                            });
+                            const createAddressData = await createAddressResp.json().catch(() => ({}));
+                            if (createAddressResp.ok && createAddressData.success && createAddressData.address?.id) {
+                                finalAddressId = Number(createAddressData.address.id);
+                            }
+                        }
+                        const payload = {
+                            payment_method: selectedPayment.value,
+                            address_id: finalAddressId,
+                            shipping_address: usingHistory ? '' : `${receiverProvince}${receiverCity}${receiverDistrict}${receiverTown}${receiverAddress}`,
+                            shipping_info: {
+                                receiver_name: receiverName,
+                                receiver_phone: receiverPhone,
+                                receiver_province: receiverProvince,
+                                receiver_city: receiverCity,
+                                receiver_district: receiverDistrict,
+                                receiver_town: receiverTown,
+                                receiver_address: receiverAddress
+                            },
+                            invoice_info: {
+                                invoice_type: invoiceType,
+                                invoice_title: invoiceTitle,
+                                invoice_tax_no: invoiceTaxNo,
+                                invoice_email: invoiceEmail
+                            }
+                        };
+                        const response = await fetch('/api/orders', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify(payload)
+                        });
+                        const result = await response.json();
+                        if (!response.ok || !result.success) {
+                            setPaymentStatus(result.message || `下单失败（HTTP ${response.status}）`, 'error');
+                            showToast(result.message || '下单失败', 'error');
+                            confirmBtn.disabled = false;
+                            confirmBtn.textContent = originalText;
+                            return;
+                        }
+                        setPaymentStatus('下单成功，正在跳转订单详情...', 'success');
+                        showToast('下单成功，正在跳转订单详情', 'success');
+                        closePaymentModal();
+                        localStorage.removeItem('cart');
+                        setTimeout(() => {
+                            window.location.href = `order-detail.html?id=${result.order_id}`;
+                        }, 300);
+                    } catch (error) {
+                        console.error('创建订单失败:', error);
+                        setPaymentStatus(`网络异常：${error.message || '下单失败'}`, 'error');
+                        showToast('网络异常，下单失败', 'error');
+                    } finally {
+                        confirmBtn.disabled = false;
+                        confirmBtn.textContent = originalText;
+                    }
+                });
+            }
+            
+            // 支付方式选择
+            paymentMethods.forEach(method => {
+                method.addEventListener('click', function() {
+                    // 移除所有选中状态
+                    paymentMethods.forEach(m => m.classList.remove('selected'));
+                    // 添加选中状态
+                    this.classList.add('selected');
+                    // 选中对应的radio
+                    const radio = this.querySelector('.payment-radio');
+                    if (radio) {
+                        radio.checked = true;
+                    }
+                });
+            });
+            
+            // 点击弹窗外部关闭弹窗
+            paymentModal.addEventListener('click', function(e) {
+                if (e.target === paymentModal) {
+                    closePaymentModal();
+                }
+            });
+            
+            // 键盘ESC键关闭弹窗
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closePaymentModal();
+                }
+            });
+        }
+        
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            renderCart();
+            initAddressCascader();
+            const historyBtn = document.getElementById('addrModeHistoryBtn');
+            const newBtn = document.getElementById('addrModeNewBtn');
+            if (historyBtn) historyBtn.addEventListener('click', () => setAddressMode('history'));
+            if (newBtn) newBtn.addEventListener('click', () => setAddressMode('new'));
+            setAddressMode('history');
+            loadHistoryAddresses();
+        });
+    </script>
+</body>
+</html>
